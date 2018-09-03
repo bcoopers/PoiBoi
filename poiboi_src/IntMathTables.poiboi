@@ -1,0 +1,441 @@
+# Copyright 2018 Brian Coopersmith #
+# #
+# Licensed under the Apache License, Version 2.0 (the "License"); #
+# you may not use this file except in compliance with the License. #
+# You may obtain a copy of the License at #
+# #
+#     https://www.apache.org/licenses/LICENSE-2.0 #
+# #
+# Unless required by applicable law or agreed to in writing, software #
+# distributed under the License is distributed on an "AS IS" BASIS, #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+# See the License for the specific language governing permissions and #
+# limitations under the License. #
+
+# ---------------------------------------------------------------------------- #
+# Contains addition and subtraction tables. Valid integer tables. Comparison #
+# tables. #
+# ---------------------------------------------------------------------------- #
+
+# Returns "TRUE" if num is any of the nine decimal digits. #
+IntMathIsDigit(num) {
+  IF [OR(EQUAL("0", num), OR(EQUAL("1", num), OR(EQUAL("2", num),
+      OR(EQUAL("3", num), OR(EQUAL("4", num), OR(EQUAL("5", num),
+      OR(EQUAL("6", num), OR(EQUAL("7", num),
+      OR(EQUAL("8", num), EQUAL("9", num))))))))))] {
+    RETURN "TRUE";
+  }
+  RETURN "FALSE";
+}
+
+# Returns "TRUE" if numOne is less than numTwo. Both are required to be single #
+# digit numbers. Behavior is undefined otherwise. #
+IntMathSingleDigitLessThan(numOne, numTwo) {
+  IF [EQUAL(numOne, numTwo)] {
+    RETURN "FALSE";
+  }
+  IF [EQUAL(numTwo, "9")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "9")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "8")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "8")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "7")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "7")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "6")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "6")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "5")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "5")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "4")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "4")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "3")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "3")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "2")] {
+    RETURN "TRUE";
+  } ELIF [EQUAL(numOne, "2")] {
+    RETURN "FALSE";
+  } ELIF[EQUAL(numTwo, "1")] {
+    RETURN "TRUE";
+  }
+  RETURN "FALSE";
+}
+
+# Add two single digit numbers. Result is undefined if multiple digits are #
+# inputted. #
+IntMathSingleDigitAdd(numOne, numTwo) {
+  IF [IntMathSingleDigitLessThan(numTwo, numOne)] {
+    RETURN IntMathSingleDigitAdd(numTwo, numOne);
+  }
+  # First input <= second input. #
+  IF [EQUAL(numOne, "0")] {
+    RETURN numTwo;
+  } ELIF [EQUAL(numOne, "1")] {
+    IF [EQUAL(numTwo, "1")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "9";
+    }
+    RETURN "10";
+  } ELIF [EQUAL(numOne, "2")] {
+    IF [EQUAL(numTwo, "2")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "10";
+    }
+    RETURN "11";
+  } ELIF [EQUAL(numOne, "3")] {
+    IF [EQUAL(numTwo, "3")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "10";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "11";
+    }
+    RETURN "12";
+  } ELIF [EQUAL(numOne, "4")] {
+    IF [EQUAL(numTwo, "4")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "10";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "11";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "12";
+    }
+    RETURN "13";
+  } ELIF [EQUAL(numOne, "5")] {
+    IF [EQUAL(numTwo, "5")] {
+      RETURN "10";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "11";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "12";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "13";
+    }
+    RETURN "14";
+  } ELIF [EQUAL(numOne, "6")] {
+    IF [EQUAL(numTwo, "6")] {
+      RETURN "12";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "13";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "14";
+    }
+    RETURN "15";
+  } ELIF [EQUAL(numOne, "7")] {
+    IF [EQUAL(numTwo, "7")] {
+      RETURN "14";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "15";
+    }
+    RETURN "16";
+  } ELIF [EQUAL(numOne, "8")] {
+    IF [EQUAL(numTwo, "8")] {
+      RETURN "16";
+    }
+    RETURN "17";
+  }
+  RETURN "18";
+}
+
+
+# Subtract two single digit numbers. Return result % 10. #
+IntMathSingleDigitSub(numOne, numTwo) {
+  # First do the easy cases. If numOne == numTwo or numTwo == 0 it's easy. #
+  IF [EQUAL(numOne, numTwo)] {
+    RETURN "0";
+  } ELIF [EQUAL(numTwo, "0")] {
+    RETURN numOne;
+  } ELIF [EQUAL(numOne, "9")] {
+    IF [EQUAL(numTwo, "8")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "7";
+    }
+    RETURN "8";
+  } ELIF [EQUAL(numOne, "8")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "6";
+    }
+    RETURN "7";
+  } ELIF [EQUAL(numOne, "7")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "5";
+    }
+    RETURN "6";
+  } ELIF [EQUAL(numOne, "6")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "4";
+    }
+    RETURN "5";
+  } ELIF [EQUAL(numOne, "5")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "3";
+    }
+    RETURN "4";
+  } ELIF [EQUAL(numOne, "4")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "2";
+    }
+    RETURN "3";
+  } ELIF [EQUAL(numOne, "3")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "1";
+    }
+    RETURN "2";
+  } ELIF [EQUAL(numOne, "2")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "8";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "9";
+    }
+    RETURN "1";
+  } ELIF [EQUAL(numOne, "1")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "8";
+    }
+    RETURN "9";
+  } ELIF [EQUAL(numOne, "0")] {
+    IF [EQUAL(numTwo, "9")] {
+      RETURN "1";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "2";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "3";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "4";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "5";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "6";
+    } ELIF [EQUAL(numTwo, "3")] {
+      RETURN "7";
+    } ELIF [EQUAL(numTwo, "2")] {
+      RETURN "8";
+    }
+    RETURN "9";
+  }
+}
+
+# Multiply two single digit numbers. #
+IntMathSingleDigitMultiply(numOne, numTwo) {
+  IF [IntMathSingleDigitLessThan(numTwo, numOne)] {
+    RETURN IntMathSingleDigitMultiply(numTwo, numOne);
+  }
+  # First input <= second input. #
+  IF [EQUAL(numOne, "0")] {
+    RETURN "0";
+  } ELIF [EQUAL(numOne, "1")] {
+    RETURN numTwo;
+  } ELIF [EQUAL(numOne, "2")] {
+    RETURN IntMathSingleDigitAdd(numTwo, numTwo);
+  } ELIF [EQUAL(numOne, "3")] {
+    IF [EQUAL(numTwo, "3")] {
+      RETURN "9";
+    } ELIF [EQUAL(numTwo, "4")] {
+      RETURN "12";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "15";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "18";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "21";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "24";
+    }
+    RETURN "27";
+  } ELIF [EQUAL(numOne, "4")] {
+    IF [EQUAL(numTwo, "4")] {
+      RETURN "16";
+    } ELIF [EQUAL(numTwo, "5")] {
+      RETURN "20";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "24";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "28";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "32";
+    }
+    RETURN "36";
+  } ELIF [EQUAL(numOne, "5")] {
+    IF [EQUAL(numTwo, "5")] {
+      RETURN "25";
+    } ELIF [EQUAL(numTwo, "6")] {
+      RETURN "30";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "35";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "40";
+    }
+    RETURN "45";
+  } ELIF [EQUAL(numOne, "6")] {
+    IF [EQUAL(numTwo, "6")] {
+      RETURN "36";
+    } ELIF [EQUAL(numTwo, "7")] {
+      RETURN "42";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "48";
+    }
+    RETURN "54";
+  } ELIF [EQUAL(numOne, "7")] {
+    IF [EQUAL(numTwo, "7")] {
+      RETURN "49";
+    } ELIF [EQUAL(numTwo, "8")] {
+      RETURN "56";
+    }
+    RETURN "63";
+  } ELIF [EQUAL(numOne, "8")] {
+    IF [EQUAL(numTwo, "8")] {
+      RETURN "64";
+    }
+    RETURN "72";
+  }
+  RETURN "81";
+}

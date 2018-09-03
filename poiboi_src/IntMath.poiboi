@@ -1,0 +1,632 @@
+# Copyright 2018 Brian Coopersmith #
+# #
+# Licensed under the Apache License, Version 2.0 (the "License"); #
+# you may not use this file except in compliance with the License. #
+# You may obtain a copy of the License at #
+# #
+#     https://www.apache.org/licenses/LICENSE-2.0 #
+# #
+# Unless required by applicable law or agreed to in writing, software #
+# distributed under the License is distributed on an "AS IS" BASIS, #
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. #
+# See the License for the specific language governing permissions and #
+# limitations under the License. #
+
+# ============================================================================ #
+# This file contains functions for adding and subtracting integers, comparing #
+# order and equality, and checking if a function is a valid integer. #
+# ============================================================================ #
+
+# Dependency: Must be compiled along with IntMathTables.poiboi. #
+
+# ---------------------------------------------------------------------------- #
+# Internal Utilities #
+# ---------------------------------------------------------------------------- #
+IntMathErrorCodePrefix() {
+  RETURN "<#&$@IntMathError#&$@>";
+}
+
+IntMathErrorCode(explanation) {
+  RETURN CONCAT(CONCAT(IntMathErrorCodePrefix(), " : "), explanation);
+}
+
+# Increment a reversed number. Must provide a nonnegative integer or who knows #
+# what will happen. #
+IntMathIncrementReversedNonnegativeNum(reversedNum) {
+  IF [EQUAL(reversedNum, "")] {
+    RETURN "";
+  }
+  LOCAL result = IntMathSingleDigitAdd(SUBSTRING(reversedNum, "0", "1"), "1");
+  LOCAL onlyOneDigit = EQUAL("1", STRLEN(result));
+  IF [EQUAL("1", STRLEN(reversedNum))] {
+    # Adding two one digit numbers. Just reverse the result. #
+    RETURN PoiCoreReverse(result);
+  }
+  IF [onlyOneDigit] {
+    RETURN CONCAT(result, SUBSTRING(reversedNum, "1", ""));
+  }
+  RETURN CONCAT(SUBSTRING(result, "1", "2"),
+                IntMathIncrementReversedNonnegativeNum(
+                  SUBSTRING(reversedNum, "1", "")));
+}
+
+# Decrement a reversed number. Must provide a positive integer or who knows #
+# what will happen. #
+IntMathDecrementReversedPositiveNumHelper(reversedNum) {
+  IF [EQUAL(reversedNum, "")] {
+    RETURN "";
+  } ELIF [EQUAL(reversedNum, "0")] {
+    RETURN "";
+  }
+  LOCAL firstDigit = SUBSTRING(reversedNum, "0", "1");
+  LOCAL result = IntMathSingleDigitSub(firstDigit, "1");
+  IF [EQUAL("1", STRLEN(reversedNum))] {
+    RETURN result;
+  }
+  IF [EQUAL(firstDigit, "0")] {
+    RETURN CONCAT(result, IntMathDecrementReversedPositiveNumHelper(
+                            SUBSTRING(reversedNum, "1", "")));
+  }
+  RETURN CONCAT(result, SUBSTRING(reversedNum, "1", ""));
+
+}
+
+IntMathDecrementReversedPositiveNum(reversedNum) {
+  RETURN PoiCoreReverse(
+    IntMathStripLeadingZeroes(
+      PoiCoreReverse(
+        IntMathDecrementReversedPositiveNumHelper(reversedNum))));
+}
+
+# Returns true if the first character is -. Does not require a valid integer. #
+IntMathStartsWithNegative(num) {
+  RETURN EQUAL("-", SUBSTRING(num, "0", "1"));
+}
+
+# Removes all leading zeroes from num. Operation does not require a valid    #
+# integer, but does guarantee that an invalid input integer will not result  #
+# in a valid output integer. Removes negative as well if num evaluates to 0. #
+IntMathStripLeadingZeroes(num) {
+  LOCAL startsWithNegative = IntMathStartsWithNegative(num);
+  LOCAL positiveNum = num;
+  IF [startsWithNegative] {
+    positiveNum = SUBSTRING(num, "1", "");
+  }
+  IF [EQUAL(positiveNum, "")] {
+    RETURN num;
+  }
+  WHILE [EQUAL("0", SUBSTRING(positiveNum, "0", "1"))] {
+    positiveNum = SUBSTRING(positiveNum, "1", "");
+  }
+  IF [EQUAL("", positiveNum)] {
+    RETURN "0";
+  }
+  IF [NOT(IntMathIsDigit(SUBSTRING(positiveNum, "0", "1")))] {
+    RETURN num;
+  }
+  IF [startsWithNegative] {
+    RETURN CONCAT("-", positiveNum);
+  }
+  RETURN positiveNum;
+}
+
+# Find the largest single digit number d such that d * numOne <= numTwo. #
+# Requires that such a number exists. #
+IntMathFindSingleDigitFactor(numOne, numTwo) {
+  # Check 0 first, since it doesn't require a multiply, and will be faster #
+  # than other checks. #
+  IF [IntMathLessThan(numTwo, numOne)] {
+    RETURN "0";
+  }
+  # d > 0 #
+  IF [IntMathLessThan(numTwo, IntMathMultiply("5", numOne))] {
+    # d < 5. #
+    IF [IntMathLessThan(numTwo, IntMathMultiply("3", numOne))] {
+      # d is 2 or 1 or 0 #
+      IF [IntMathLessThan(numTwo, IntMathMultiply("2", numOne))] {
+        RETURN "1";
+      }
+      RETURN "2";
+    }
+    # d is 3 or 4 #
+    IF [IntMathLessThan(numTwo, IntMathMultiply("4", numOne))] {
+      RETURN "3";
+    }
+    RETURN "4";
+  }
+  # d >= 5 #
+  IF [IntMathLessThan(numTwo, IntMathMultiply("7", numOne))] {
+    # d is 5 or 6 #
+    IF [IntMathLessThan(numTwo, IntMathMultiply("6", numOne))] {
+      RETURN "5";
+    }
+    RETURN "6";
+  }
+  # d is 7, 8, or 9 #
+  IF [IntMathLessThan(numTwo, IntMathMultiply("9", numOne))] {
+    # d is 7 or 8 #
+    IF [IntMathLessThan(numTwo, IntMathMultiply("8", numOne))] {
+      RETURN "7";
+    }
+    RETURN "8";
+  }
+  RETURN "9";
+}
+
+# ---------------------------------------------------------------------------- #
+# Checks #
+# ---------------------------------------------------------------------------- #
+
+# Returns "TRUE" if num is a valid integer >= 0. #
+IntMathIsNonNegativeInt(num) {
+  num = IntMathStripLeadingZeroes(num);
+  IF [EQUAL("", num)] {
+    RETURN "FALSE";
+  }
+  WHILE [NOT(EQUAL("", num))] {
+    IF [NOT(IntMathIsDigit(SUBSTRING(num, "0", "1")))] {
+      RETURN "FALSE";
+    }
+    num = SUBSTRING(num, "1", "");
+  }
+  RETURN "TRUE";
+}
+
+# Returns "TRUE" if num is a valid integer < 0. #
+IntMathIsNegativeInt(num) {
+  num = IntMathStripLeadingZeroes(num);
+  RETURN AND(IntMathStartsWithNegative(num),
+             IntMathIsNonNegativeInt(SUBSTRING(num, "1", "")));
+}
+
+# Returns "TRUE" if num can be validly parsed as an integer. #
+IntMathIsValid(num) {
+  num = IntMathStripLeadingZeroes(num);
+  IF [IntMathStartsWithNegative(num)] {
+    RETURN IntMathIsNonNegativeInt(SUBSTRING(num, "1", ""));
+  }
+  RETURN IntMathIsNonNegativeInt(num);
+}
+
+# ---------------------------------------------------------------------------- #
+# External utilities #
+# ---------------------------------------------------------------------------- #
+
+# Returns the quotient from the result of IntMathDivideWithRemainder. This is #
+# equivalent to the floor of int division. #
+IntMathGetQuotient(quotientAndRemainder) {
+  LOCAL remainderIndex = PoiCoreFind(quotientAndRemainder, "r");
+  IF [EQUAL(remainderIndex, STRLEN(quotientAndRemainder))] {
+    RETURN IntMathErrorCode("Quotient/Remainder must contain 'r' separator.");
+  }
+  LOCAL quotient = SUBSTRING(quotientAndRemainder, "0", remainderIndex);
+  LOCAL remainder = SUBSTRING(quotientAndRemainder,
+                              IntMathIncrement(remainderIndex), "");
+  IF [NOT(AND(IntMathIsValid(remainder), IntMathIsValid(quotient)))] {
+    RETURN IntMathErrorCode("Quotient/Remainder are not valid integers.");
+  }
+  RETURN quotient;
+}
+
+# Returns the remainder from the result of IntMathDivideWithRemainder. This is #
+# equivalent to the top % the bottom. #
+IntMathGetRemainder(quotientAndRemainder) {
+  LOCAL remainderIndex = PoiCoreFind(quotientAndRemainder, "r");
+  IF [EQUAL(remainderIndex, STRLEN(quotientAndRemainder))] {
+    RETURN IntMathErrorCode("Quotient/Remainder must contain 'r' separator.");
+  }
+  LOCAL quotient = SUBSTRING(quotientAndRemainder, "0", remainderIndex);
+  LOCAL remainder = SUBSTRING(quotientAndRemainder,
+                              IntMathIncrement(remainderIndex), "");
+  IF [NOT(AND(IntMathIsValid(remainder), IntMathIsValid(quotient)))] {
+    RETURN IntMathErrorCode("Quotient/Remainder are not valid integers.");
+  }
+  RETURN remainder;
+}
+
+# ---------------------------------------------------------------------------- #
+# Comparators #
+# ---------------------------------------------------------------------------- #
+
+
+# "TRUE" if numOne == numTwo. #
+IntMathEqual(numOne, numTwo) {
+  numOne = IntMathStripLeadingZeroes(numOne);
+  numTwo = IntMathStripLeadingZeroes(numTwo);
+  IF [NOT(AND(IntMathIsValid(numOne), IntMathIsValid(numTwo)))] {
+    RETURN IntMathErrorCode("Can only check equality on integers.");
+  }
+  # After being stripped of leading zeroes, two numbers are equal if they #
+  # have the same digits. #
+  RETURN EQUAL(numOne, numTwo);
+}
+
+# "TRUE" if numOne < numTwo. #
+IntMathLessThan(numOne, numTwo) {
+  numOne = IntMathStripLeadingZeroes(numOne);
+  numTwo = IntMathStripLeadingZeroes(numTwo);
+  IF [NOT(AND(IntMathIsValid(numOne), IntMathIsValid(numTwo)))] {
+    RETURN IntMathErrorCode("Can only compare ordering of integers.");
+  }
+  IF [AND(IntMathStartsWithNegative(numOne),
+          NOT(IntMathStartsWithNegative(numTwo)))] {
+    # First is negative, second is not. Easy case. #
+    RETURN "TRUE";
+  } ELIF [AND(IntMathStartsWithNegative(numTwo),
+              NOT(IntMathStartsWithNegative(numOne)))] {
+    # Second is negative, first is not. Easy case. #
+    RETURN "FALSE";
+  } ELIF [AND(IntMathStartsWithNegative(numTwo),
+              IntMathStartsWithNegative(numOne))] {
+    # Both are negative. Can compare the absolute values in reverse. #
+    RETURN IntMathLessThan(SUBSTRING(numTwo, "1", ""),
+                           SUBSTRING(numOne, "1", ""));
+  }
+  # Both are positive. Check the number of digits. #
+  LOCAL numOneDigits = STRLEN(numOne);
+  LOCAL numTwoDigits = STRLEN(numTwo);
+
+  IF [NOT(EQUAL(numOneDigits, numTwoDigits))] {
+    # Whoever has the fewest digits is smallest. #
+    RETURN IntMathLessThan(numOneDigits, numTwoDigits);
+  }
+  # Same number of digits. Need to compare digit by digit. #
+  WHILE [NOT(EQUAL(numOne, ""))] {
+    LOCAL digitOne = SUBSTRING(numOne, "0", "1");
+    LOCAL digitTwo = SUBSTRING(numTwo, "0", "1");
+    IF [NOT(EQUAL(digitOne, digitTwo))] {
+      IF [IntMathSingleDigitLessThan(digitOne, digitTwo)] {
+        RETURN "TRUE";
+      }
+      RETURN "FALSE";
+    }
+    numOne = SUBSTRING(numOne, "1", "");
+    numTwo = SUBSTRING(numTwo, "1", "");
+  }
+  # All digits are equal. #
+  RETURN "FALSE";
+}
+
+# "TRUE" if numOne > numTwo. #
+IntMathGreaterThan(numOne, numTwo) {
+  RETURN IntMathLessThan(numTwo, numOne);
+}
+
+# ---------------------------------------------------------------------------- #
+# Functions #
+# ---------------------------------------------------------------------------- #
+
+# Absolute value of num. #
+IntMathAbs(num) {
+  num = IntMathStripLeadingZeroes(num);
+  IF [NOT(IntMathIsValid(num))] {
+    RETURN IntMathErrorCode("Can only take abs value of integers.");
+  }
+  IF [IntMathStartsWithNegative(num)] {
+    RETURN SUBSTRING(num, "1", "");
+  }
+  RETURN num;
+}
+
+# Increment num by 1. #
+IntMathIncrement(num) {
+  num = IntMathStripLeadingZeroes(num);
+  IF [NOT(IntMathIsValid(num))] {
+    RETURN IntMathErrorCode("Can only increment an integer.");
+  }
+  IF [IntMathStartsWithNegative(num)] {
+    RETURN IntMathStripLeadingZeroes(
+      CONCAT("-", IntMathDecrement(SUBSTRING(num, "1", ""))));
+  }
+  RETURN PoiCoreReverse(
+    IntMathIncrementReversedNonnegativeNum(
+      PoiCoreReverse(num)));
+}
+
+# Decrement num by 1. #
+IntMathDecrement(num) {
+  num = IntMathStripLeadingZeroes(num);
+  IF [NOT(IntMathIsValid(num))] {
+    RETURN IntMathErrorCode("Can only decrement an integer.");
+  }
+  IF [IntMathStartsWithNegative(num)] {
+    RETURN CONCAT("-", IntMathIncrement(SUBSTRING(num, "1", "")));
+  }
+  IF[EQUAL(num, "0")] {
+    RETURN "-1";
+  }
+  RETURN IntMathStripLeadingZeroes(
+    PoiCoreReverse(
+      IntMathDecrementReversedPositiveNumHelper(PoiCoreReverse(num))));
+}
+
+# Add numOne to numTwo. #
+IntMathAdd(numOne, numTwo) {
+  numOne = IntMathStripLeadingZeroes(numOne);
+  numTwo = IntMathStripLeadingZeroes(numTwo);
+  IF [NOT(AND(IntMathIsValid(numOne), IntMathIsValid(numTwo)))] {
+    RETURN IntMathErrorCode("Can only add integers.");
+  }
+  IF [EQUAL("0", numOne)] {
+    RETURN numTwo;
+  } ELIF [EQUAL("0", numTwo)] {
+    RETURN numOne;
+  }
+  LOCAL isNumOneNegative = IntMathStartsWithNegative(numOne);
+  LOCAL isNumTwoNegative = IntMathStartsWithNegative(numTwo);
+  IF [AND(isNumOneNegative, isNumTwoNegative)] {
+    # Add the positive digits and return the negative result. #
+    RETURN CONCAT("-", IntMathAdd(SUBSTRING(numOne, "1", ""),
+                                  SUBSTRING(numTwo, "1", "")));
+  } ELIF [isNumOneNegative] {
+    # Adding a negative to a positive is the same as subtracting. #
+    RETURN IntMathSubtract(numTwo, SUBSTRING(numOne, "1", ""));
+  } ELIF [isNumTwoNegative] {
+    RETURN IntMathSubtract(numOne, SUBSTRING(numTwo, "1", ""));
+  }
+  # Both numbers are positive. Do the addition algorithm you learned in school #
+  LOCAL numOneReversed = PoiCoreReverse(numOne);
+  LOCAL numTwoReversed = PoiCoreReverse(numTwo);
+  LOCAL result = "";
+  WHILE [NOT(AND(EQUAL(numOneReversed, "0"), EQUAL(numTwoReversed, "0")))] {
+    LOCAL singleDigitResult = IntMathSingleDigitAdd(
+      SUBSTRING(numOneReversed, "0", "1"), SUBSTRING(numTwoReversed, "0", "1"));
+    numOneReversed = SUBSTRING(numOneReversed, "1", "");
+    numTwoReversed = SUBSTRING(numTwoReversed, "1", "");
+    IF [EQUAL(numOneReversed, "")] {
+      numOneReversed = "0";
+    }
+    IF [EQUAL(numTwoReversed, "")] {
+      numTwoReversed = "0";
+    }
+    IF [EQUAL("1", STRLEN(singleDigitResult))] {
+      result = CONCAT(singleDigitResult, result);
+    } ELSE {
+      result = CONCAT(SUBSTRING(singleDigitResult, "1", "2"), result);
+      numOneReversed = IntMathIncrementReversedNonnegativeNum(numOneReversed);
+    }
+  }
+  RETURN result;
+}
+
+# Subtracts numTwo from numOne. #
+IntMathSubtract(numOne, numTwo) {
+  numOne = IntMathStripLeadingZeroes(numOne);
+  numTwo = IntMathStripLeadingZeroes(numTwo);
+  IF [NOT(AND(IntMathIsValid(numOne), IntMathIsValid(numTwo)))] {
+    RETURN IntMathErrorCode("Can only subtract integers.");
+  }
+  LOCAL isNumOneNegative = IntMathStartsWithNegative(numOne);
+  LOCAL isNumTwoNegative = IntMathStartsWithNegative(numTwo);
+  IF [AND(isNumOneNegative, isNumTwoNegative)] {
+    RETURN IntMathSubtract(SUBSTRING(numTwo, "1", ""),
+                           SUBSTRING(numOne, "1", ""));
+  } ELIF [isNumOneNegative] {
+    # Adding a negative to a positive is the same as subtracting. #
+    RETURN IntMathAdd(numOne, CONCAT("-", numTwo));
+  } ELIF [isNumTwoNegative] {
+    RETURN IntMathAdd(numOne, SUBSTRING(numTwo, "1", ""));
+  }
+  IF [IntMathLessThan(numOne, numTwo)] {
+    RETURN CONCAT("-", IntMathSubtract(numTwo, numOne));
+  }
+  # Both numbers are positive, with numTwo >= numOne. Do the subtraction #
+  # algorithm you learned in school. #
+  LOCAL numOneReversed = PoiCoreReverse(numOne);
+  LOCAL numTwoReversed = PoiCoreReverse(numTwo);
+  LOCAL result = "";
+  WHILE [NOT(AND(EQUAL(numOneReversed, "0"), EQUAL(numTwoReversed, "0")))] {
+    LOCAL digitTop = SUBSTRING(numOneReversed, "0", "1");
+    LOCAL digitBottom = SUBSTRING(numTwoReversed, "0", "1");
+    LOCAL singleDigitResult = IntMathSingleDigitSub(digitTop, digitBottom);
+    numOneReversed = SUBSTRING(numOneReversed, "1", "");
+    numTwoReversed = SUBSTRING(numTwoReversed, "1", "");
+    result = CONCAT(singleDigitResult, result);
+    IF [IntMathSingleDigitLessThan(digitTop, digitBottom)] {
+      numOneReversed = IntMathDecrementReversedPositiveNum(numOneReversed);
+    }
+    IF [EQUAL(numOneReversed, "")] {
+      numOneReversed = "0";
+    }
+    IF [EQUAL(numTwoReversed, "")] {
+      numTwoReversed = "0";
+    }
+  }
+  RETURN IntMathStripLeadingZeroes(result);
+}
+
+# Multiplies numOne by numTwo. #
+IntMathMultiply(numOne, numTwo) {
+  numOne = IntMathStripLeadingZeroes(numOne);
+  numTwo = IntMathStripLeadingZeroes(numTwo);
+  IF [NOT(AND(IntMathIsValid(numOne), IntMathIsValid(numTwo)))] {
+    RETURN IntMathErrorCode("Can only multiply integers.");
+  }
+  LOCAL isNumOneNegative = IntMathStartsWithNegative(numOne);
+  LOCAL isNumTwoNegative = IntMathStartsWithNegative(numTwo);
+  IF [AND(isNumOneNegative, isNumTwoNegative)] {
+    # If both are negative, the result is positive. #
+    RETURN IntMathMultiply(SUBSTRING(numTwo, "1", ""),
+                           SUBSTRING(numOne, "1", ""));
+  } ELIF [isNumOneNegative] {
+    # If only one is negative, the result is negative. #
+    RETURN CONCAT("-", IntMathMultiply(SUBSTRING(numOne, "1", ""), numTwo));
+  } ELIF [isNumTwoNegative] {
+    RETURN CONCAT("-", IntMathMultiply(SUBSTRING(numTwo, "1", ""), numOne));
+  }
+  # Both are positive. Make sure they are sorted. #
+  IF [IntMathLessThan(numTwo, numOne)] {
+    RETURN IntMathMultiply(numTwo, numOne);
+  }
+  # numOne <= numTwo. #
+  IF [EQUAL(numOne, "0")] {
+    RETURN "0";
+  } ELIF [EQUAL(numOne, "1")] {
+    RETURN numTwo;
+  }
+  # Do the multiplication algorithm you learned in school. #
+  LOCAL numTwoReversed = PoiCoreReverse(numTwo);
+  LOCAL numOneReversed = PoiCoreReverse(numOne);
+  LOCAL accumulatedResult = "0";
+  LOCAL carryResultPrefix = "0";
+  WHILE [NOT(EQUAL(numOneReversed, ""))] {
+    LOCAL carryResult = carryResultPrefix;
+    LOCAL bottomResult = SUBSTRING(carryResultPrefix, "1", "");
+    LOCAL numTwoReversedConsumed = numTwoReversed;
+    WHILE [NOT(EQUAL("", numTwoReversedConsumed))] {
+      LOCAL result = IntMathSingleDigitMultiply(
+        SUBSTRING(numOneReversed, "0", "1"),
+        SUBSTRING(numTwoReversedConsumed, "0", "1"));
+      IF [EQUAL(STRLEN(result), "2")] {
+        bottomResult = CONCAT(SUBSTRING(result, "1", "2"), bottomResult);
+        carryResult = CONCAT(SUBSTRING(result, "0", "1"), carryResult);
+      } ELSE {
+        bottomResult = CONCAT(result, bottomResult);
+        carryResult = CONCAT("0", carryResult);
+      }
+      numTwoReversedConsumed = SUBSTRING(numTwoReversedConsumed, "1", "");
+    }
+    numOneReversed = SUBSTRING(numOneReversed, "1", "");
+    accumulatedResult = IntMathAdd(
+      accumulatedResult, IntMathAdd(bottomResult, carryResult));
+    carryResultPrefix = CONCAT("0", carryResultPrefix);
+  }
+  RETURN accumulatedResult;
+}
+
+# Divides top by bot. This function returns the floor division result on the #
+# left, followed by an 'r', with the remainder on the right. #
+IntMathDivideWithRemainder(top, bot) {
+  top = IntMathStripLeadingZeroes(top);
+  bot = IntMathStripLeadingZeroes(bot);
+  IF [NOT(AND(IntMathIsValid(top), IntMathIsValid(bot)))] {
+    RETURN IntMathErrorCode("Can only divide integers.");
+  }
+  # Handle some simple cases. #
+  IF [EQUAL(bot, "1")] {
+    RETURN CONCAT(top, "r0");
+  } ELIF [EQUAL(bot, "0")] {
+    RETURN IntMathErrorCode("Cannot divide by zero.");
+  } ELIF [EQUAL(top, "0")] {
+    RETURN "0r0";
+  }
+  # Handle negative numbers. #
+  LOCAL isTopNegative = IntMathStartsWithNegative(top);
+  LOCAL isBotNegative = IntMathStartsWithNegative(bot);
+  IF [OR(isTopNegative, isBotNegative)] {
+    LOCAL posAnswer = "";
+    IF [AND(isTopNegative, isBotNegative)] {
+      posAnswer = IntMathDivideWithRemainder(SUBSTRING(top, "1", ""),
+                                             SUBSTRING(bot, "1", ""));
+    } ELIF [isTopNegative] {
+      posAnswer = IntMathDivideWithRemainder(SUBSTRING(top, "1", ""), bot);
+    } ELSE {
+      posAnswer = IntMathDivideWithRemainder(top, SUBSTRING(bot, "1", ""));
+    }
+    LOCAL quotient = IntMathGetQuotient(posAnswer);
+    LOCAL remainder = IntMathGetRemainder(posAnswer);
+    IF [AND(isTopNegative, isBotNegative)] {
+      remainder = IntMathStripLeadingZeroes(CONCAT("-", remainder));
+    } ELSE {
+      quotient = IntMathStripLeadingZeroes(CONCAT("-", quotient));
+      IF [NOT(EQUAL(remainder, "0"))] {
+        quotient = IntMathDecrement(quotient);
+        IF [isBotNegative] {
+          remainder = IntMathAdd(bot, remainder);
+        } ELSE {
+          remainder = IntMathSubtract(bot, remainder);
+        }
+      }
+    }
+    RETURN CONCAT(CONCAT(quotient, "r"), remainder);
+  }
+  # Handle one last simple case. #
+  IF [IntMathLessThan(top, bot)] {
+    RETURN CONCAT("0r", top);
+  }
+  # Long division time. #
+  LOCAL result = "";
+  LOCAL difference = "";
+  WHILE [NOT(EQUAL(top, ""))] {
+    LOCAL topLeftPiece = CONCAT(difference, SUBSTRING(top, "0", "1"));
+    LOCAL digit = IntMathFindSingleDigitFactor(bot, topLeftPiece);
+    result = CONCAT(result, digit);
+    difference = IntMathSubtract(topLeftPiece, IntMathMultiply(digit, bot));
+    IF [EQUAL(difference, "0")] {
+      difference = "";
+    }
+    top = SUBSTRING(top, "1", "");
+  }
+  IF [EQUAL(difference, "")] {
+    difference = "0";
+  }
+  RETURN CONCAT(CONCAT(IntMathStripLeadingZeroes(result), "r"), difference);
+}
+
+# Returns top / bot rounded down to the nearest integer. #
+IntMathDivideFloor(top, bot) {
+  top = IntMathStripLeadingZeroes(top);
+  bot = IntMathStripLeadingZeroes(bot);
+  IF [NOT(AND(IntMathIsValid(top), IntMathIsValid(bot)))] {
+    RETURN IntMathErrorCode("Can only divide integers.");
+  }
+  RETURN IntMathGetQuotient(IntMathDivideWithRemainder(top, bot));
+}
+
+# Returns top / bot rounded up to the nearest integer. #
+IntMathDivideCeil(top, bot) {
+  top = IntMathStripLeadingZeroes(top);
+  bot = IntMathStripLeadingZeroes(bot);
+  IF [NOT(AND(IntMathIsValid(top), IntMathIsValid(bot)))] {
+    RETURN IntMathErrorCode("Can only divide integers.");
+  }
+  LOCAL result = IntMathDivideWithRemainder(top, bot);
+  LOCAL quotient = IntMathGetQuotient(result);
+  LOCAL remainder = IntMathGetRemainder(result);
+  IF [EQUAL(remainder, "0")] {
+    RETURN quotient;
+  }
+  RETURN IntMathIncrement(quotient);
+}
+
+# Returns top / bot rounded to the nearest integer. If halfway between two #
+# integers, rounds towards zero. #
+IntMathDivideRound(top, bot) {
+  top = IntMathStripLeadingZeroes(top);
+  bot = IntMathStripLeadingZeroes(bot);
+  IF [NOT(AND(IntMathIsValid(top), IntMathIsValid(bot)))] {
+    RETURN IntMathErrorCode("Can only divide integers.");
+  }
+  LOCAL result = IntMathDivideWithRemainder(top, bot);
+  LOCAL quotient = IntMathGetQuotient(result);
+  LOCAL remainder = IntMathGetRemainder(result);
+  LOCAL doubleRemainder = IntMathMultiply("2", remainder);
+  IF [EQUAL(remainder, "0")] {
+    RETURN quotient;
+  }
+  IF [IntMathEqual(doubleRemainder, bot)] {
+    IF [IntMathStartsWithNegative(quotient)] {
+      RETURN IntMathIncrement(quotient);
+    }
+  } ELSE {
+    LOCAL botNegative = IntMathStartsWithNegative(bot);
+    IF [IntMathGreaterThan(doubleRemainder, bot)] {
+      IF [NOT(IntMathStartsWithNegative(bot))] {
+        RETURN IntMathIncrement(quotient);
+      }
+    } ELIF [botNegative] {
+      RETURN IntMathIncrement(quotient);
+    }
+  }
+  RETURN quotient;
+}
+
+# Returns top % bot. #
+IntMathModulus(top, bot) {
+  top = IntMathStripLeadingZeroes(top);
+  bot = IntMathStripLeadingZeroes(bot);
+  IF [NOT(AND(IntMathIsValid(top), IntMathIsValid(bot)))] {
+    RETURN IntMathErrorCode("Can only take modulus of integers.");
+  }
+  RETURN IntMathGetRemainder(IntMathDivideWithRemainder(top, bot));
+}
