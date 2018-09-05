@@ -31,6 +31,7 @@ class TokenPiece : public GrammarPiece {
   virtual ~TokenPiece() {};
   virtual bool Search(char c) = 0;
   virtual const char* GetContent() const = 0;
+  virtual size_t GetLength() const = 0;
   virtual bool IsFinalizable() const = 0;
 
   std::vector<std::unique_ptr<GrammarPiece>> GetDescendents() const override {
@@ -47,6 +48,8 @@ class MatchTokenPiece : public TokenPiece {
     return num_chars_processed_ < length_ &&
            c == GetContent()[num_chars_processed_++];
   }
+
+  size_t GetLength() const override { return length_; }
 
   bool IsFinalizable() const override {
     return num_chars_processed_ >= length_;
@@ -112,9 +115,16 @@ class Assigner : public MatchTokenPiece {
 };
 
 // Specifies a variable is a local variable.
+// TODO: This will be deprecated.
 class KeywordLocal : public MatchTokenPiece {
  public:
   const char* GetContent() const override { return "LOCAL"; }
+};
+
+// Specifies a variable is a global variable.
+class KeywordGlobal : public MatchTokenPiece {
+ public:
+  const char* GetContent() const override { return "GLOBAL"; }
 };
 
 // Starts a WHILE loop.
@@ -160,6 +170,8 @@ class QuotedString : public TokenPiece {
 
   const char* GetContent() const override { return content_.c_str(); }
 
+  size_t GetLength() const override { return content_.size(); }
+
   bool IsFinalizable() const override {
     return is_finalized_ && !content_.empty();
   }
@@ -179,6 +191,8 @@ class Variable : public TokenPiece {
 
   const char* GetContent() const override { return content_.c_str(); }
 
+  size_t GetLength() const override { return content_.size(); }
+
   bool IsFinalizable() const override { return !content_.empty(); }
  private:
   std::string content_;
@@ -191,6 +205,8 @@ class Builtin : public TokenPiece {
   bool Search(char c) override;
 
   const char* GetContent() const override { return content_.c_str(); }
+
+  size_t GetLength() const override { return content_.size(); }
 
   bool IsFinalizable() const override { return !content_.empty(); }
 
@@ -206,6 +222,8 @@ class FunctionName : public TokenPiece {
   bool Search(char c) override;
 
   const char* GetContent() const override { return content_.c_str(); }
+
+  size_t GetLength() const override { return content_.size(); }
 
   bool IsFinalizable() const override {
     return !content_.empty() && contains_lower_case_;
@@ -224,6 +242,8 @@ class EndOfFile : public TokenPiece {
   bool Search(char c) override { return false; }
 
   const char* GetContent() const override { return ""; }
+
+  size_t GetLength() const override { return 0; }
 
   bool IsFinalizable() const override { return true; }
 };

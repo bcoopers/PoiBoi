@@ -22,10 +22,6 @@ bool QuotedString::Search(char c) {
   if (no_more_) {
     return false;
   }
-  if (c == '\n') {
-    no_more_ = true;
-    return false;
-  }
   if (content_.empty()) {
     if (c == '"') {
       content_.push_back(c);

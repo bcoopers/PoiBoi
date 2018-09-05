@@ -17,12 +17,13 @@ limitations under the License.
 #ifndef _SCANNER_H_
 #define _SCANNER_H_
 
+#include "error_code.h"
 #include "tokens.h"
 
 namespace pbc {
 
 // Scans the code and outputs all the tokens. Returns false on failure.
-bool ScanTokens(const std::string& code,
+ErrorCode ScanTokens(const std::string& code,
                 std::vector<std::unique_ptr<TokenPiece>>& tokens);
 
 }  // namespace pbc

@@ -20,6 +20,7 @@ limitations under the License.
 namespace pbc {
 
 class ErrorCode {
+ public:
   static ErrorCode Success() {
     ErrorCode ec;
     ec.success_ = true;
@@ -29,14 +30,15 @@ class ErrorCode {
   static ErrorCode Failure(std::string msg) {
     ErrorCode ec;
     ec.success_ = false;
-    ec.error_msg = std::move(msg);
+    ec.error_msg_ = std::move(msg);
+    return ec;
   }
 
   bool IsSuccess() const { return success_; }
 
   bool IsFailure() const { return !success_; }
 
-  const std::string& ErrorMessage() const { return error_msg; }
+  const std::string& ErrorMessage() const { return error_msg_; }
 
 
  private:

@@ -29,6 +29,13 @@ class GrammarPiece {
  public:
   virtual ~GrammarPiece() {}
   virtual std::vector<std::unique_ptr<GrammarPiece>> GetDescendents() const = 0;
+
+  size_t line_number() const { return line_number_; }
+  void set_line_number(size_t line_num) { line_number_ = line_num; }
+
+  const std::string& file_name() const { return file_name_; }
+  void set_file_name(std::string fname) { file_name_ = std::move(fname); }
+
  protected:
   size_t line_number_ = 0;
   std::string file_name_;
