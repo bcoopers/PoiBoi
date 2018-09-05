@@ -34,8 +34,13 @@ class TokenPiece : public GrammarPiece {
   virtual size_t GetLength() const = 0;
   virtual bool IsFinalizable() const = 0;
 
-  std::vector<std::unique_ptr<GrammarPiece>> GetDescendents() const override {
+  std::vector<std::vector<std::unique_ptr<GrammarPiece>>>
+  GetDescendents() const override {
     return {};
+  }
+ protected:
+  void CloneTPBase(TokenPiece* tp) const {
+    CloneGPBase(tp);
   }
 };
 
@@ -59,6 +64,17 @@ class MatchTokenPiece : public TokenPiece {
     return num_chars_processed_ >= GetLength();
   }
 
+  const char* DebugDescription() const override {
+    return GetContent();
+  }
+
+protected:
+  void CloneMTPBase(MatchTokenPiece* mtp) const {
+    CloneTPBase(mtp);
+    mtp->hit_error_ = hit_error_;
+    mtp->num_chars_processed_ = num_chars_processed_;
+  }
+
  private:
   bool hit_error_ = false;
   size_t num_chars_processed_ = 0;
@@ -67,126 +83,272 @@ class MatchTokenPiece : public TokenPiece {
 // Opens a block of code with {, after an IF, WHILE, or function definition.
 class OpenCodeBlock : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new OpenCodeBlock);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "{"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::OPEN_CODE_BLOCK;
+  }
 };
 
 // Closes a block of code with }, matches an OpenCodeBlock.
 class CloseCodeBlock : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new CloseCodeBlock);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "}"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::CLOSE_CODE_BLOCK;
+  }
 };
 
 // Ends most lines of code with ;.
 class EndStatement : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new EndStatement);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return ";"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::END_STATEMENT;
+  }
 };
 
 // Opens the variables list when calling or declaring a function with (.
 class OpenFunctionCall : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new OpenFunctionCall);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "("; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::OPEN_FUNCTION_CALL;
+  }
 };
 
 // Closes the variables list when calling or declaring a function with ).
 class CloseFunctionCall : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new CloseFunctionCall);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return ")"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::CLOSE_FUNCTION_CALL;
+  }
 };
 
 // Separates variables in list when calling or declaring a function with ,.
 class ArgumentListSeparator : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new ArgumentListSeparator);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return ","; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::ARGUMENT_LIST_SEPARATOR;
+  }
 };
 
 // Opens the conditional in an IF or WHILE with [.
 class OpenConditionalBlock : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new OpenConditionalBlock);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "["; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::OPEN_CONDITIONAL_BLOCK;
+  }
 };
 
 // Closes OpenConditionalBlock with ].
 class CloseConditionalBlock : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new CloseConditionalBlock);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "]"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::CLOSE_CONDITIONAL_BLOCK;
+  }
 };
 
 // Assigns an RValue to a variable with =.
 class Assigner : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new Assigner);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "="; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::ASSIGNER;
+  }
 };
 
 // Specifies a variable is a local variable.
 // TODO: This will be deprecated.
 class KeywordLocal : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordLocal);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 5; }
   const char* GetContent() const override { return "LOCAL"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_LOCAL;
+  }
 };
 
 // Specifies a variable is a global variable.
 class KeywordGlobal : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordGlobal);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 6; }
   const char* GetContent() const override { return "GLOBAL"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_GLOBAL;
+  }
 };
 
 // Starts a WHILE loop.
 class KeywordWhile : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordWhile);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 5; }
   const char* GetContent() const override { return "WHILE"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_WHILE;
+  }
 };
 
 // Starts an IF statement.
 class KeywordIf : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordIf);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 2; }
   const char* GetContent() const override { return "IF"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_IF;
+  }
 };
 
 // Following an if statement, tarts an ELSE clase.
 class KeywordElse : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordElse);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 4; }
   const char* GetContent() const override { return "ELSE"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_ELSE;
+  }
 };
 
 // Starts following an if statement, starts an "else if" clause.
 class KeywordElif : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordElif);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 4; }
   const char* GetContent() const override { return "ELIF"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_ELIF;
+  }
 };
 
 // Allows early termination from a function.
 class KeywordReturn : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordReturn);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 6; }
   const char* GetContent() const override { return "RETURN"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_RETURN;
+  }
 };
 
 // Allows early termination from a loop.
 class KeywordBreak : public MatchTokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<MatchTokenPiece> gp(new KeywordBreak);
+    CloneMTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
   size_t GetLength() const override { return 5; }
   const char* GetContent() const override { return "BREAK"; }
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::KEYWORD_BREAK;
+  }
 };
 
 // Reads a string of anything between and including "", other than newlines.
 class QuotedString : public TokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<QuotedString> gp(new QuotedString);
+    CloneTPBase(gp.get());
+    gp->content_ = content_;
+    gp->num_backslashes_in_row_ = num_backslashes_in_row_;
+    gp->no_more_ = no_more_;
+    gp->is_finalized_ = is_finalized_;
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
   bool Search(char c) override;
 
   const char* GetContent() const override { return content_.c_str(); }
@@ -195,6 +357,14 @@ class QuotedString : public TokenPiece {
 
   bool IsFinalizable() const override {
     return is_finalized_ && !content_.empty();
+  }
+
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::QUOTED_STRING;
+  }
+
+  const char* DebugDescription() const override {
+    return "\"A quoted string- like this.\"";
   }
 
  private:
@@ -208,6 +378,14 @@ class QuotedString : public TokenPiece {
 // with a lower case letter.
 class Variable : public TokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<Variable> gp(new Variable);
+    CloneTPBase(gp.get());
+    gp->content_ = content_;
+    gp->no_more_ = no_more_;
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
   bool Search(char c) override;
 
   const char* GetContent() const override { return content_.c_str(); }
@@ -215,6 +393,15 @@ class Variable : public TokenPiece {
   size_t GetLength() const override { return content_.size(); }
 
   bool IsFinalizable() const override { return !content_.empty(); }
+
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::VARIABLE;
+  }
+
+  const char* DebugDescription() const override {
+    return "aValidVariableName";
+  }
+
  private:
   std::string content_;
   bool no_more_ = false;
@@ -223,6 +410,14 @@ class Variable : public TokenPiece {
 // Builtin functions are all capital letters.
 class Builtin : public TokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<Builtin> gp(new Builtin);
+    CloneTPBase(gp.get());
+    gp->content_ = content_;
+    gp->no_more_ = no_more_;
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
   bool Search(char c) override;
 
   const char* GetContent() const override { return content_.c_str(); }
@@ -230,6 +425,14 @@ class Builtin : public TokenPiece {
   size_t GetLength() const override { return content_.size(); }
 
   bool IsFinalizable() const override { return !content_.empty(); }
+
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::BUILTIN;
+  }
+
+  const char* DebugDescription() const override {
+    return "AVALIDBUILTINNAME";
+  }
 
  private:
   std::string content_;
@@ -240,6 +443,15 @@ class Builtin : public TokenPiece {
 // capital letter, and contain a lower case letter.
 class FunctionName : public TokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<FunctionName> gp(new FunctionName);
+    CloneTPBase(gp.get());
+    gp->content_ = content_;
+    gp->no_more_ = no_more_;
+    gp->contains_lower_case_ = contains_lower_case_;
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
   bool Search(char c) override;
 
   const char* GetContent() const override { return content_.c_str(); }
@@ -248,6 +460,14 @@ class FunctionName : public TokenPiece {
 
   bool IsFinalizable() const override {
     return !content_.empty() && contains_lower_case_;
+  }
+
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::FUNCTION_NAME;
+  }
+
+  const char* DebugDescription() const override {
+    return "AValidFunctionName";
   }
 
  private:
@@ -260,6 +480,12 @@ class FunctionName : public TokenPiece {
 // is scanned correctly.
 class EndOfFile : public TokenPiece {
  public:
+  std::unique_ptr<GrammarPiece> Clone() const override {
+    std::unique_ptr<EndOfFile> gp(new EndOfFile);
+    CloneTPBase(gp.get());
+    return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
   bool Search(char c) override { return false; }
 
   const char* GetContent() const override { return ""; }
@@ -267,6 +493,14 @@ class EndOfFile : public TokenPiece {
   size_t GetLength() const override { return 0; }
 
   bool IsFinalizable() const override { return true; }
+
+  const char* DebugDescription() const override {
+    return "The end of the file";
+  }
+
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::END_OF_FILE;
+  }
 };
 
 }  // namespace pbc

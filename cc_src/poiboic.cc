@@ -19,23 +19,33 @@ limitations under the License.
 #include <streambuf>
 #include <string>
 
+#include "parser.h"
 #include "scanner.h"
 #include "tokens.h"
 
 namespace pbc {
 namespace {
 
-void Scan(const std::string& code) {
-  std::vector<std::unique_ptr<TokenPiece>> tokens;
+bool Scan(const std::string& code,
+          std::vector<std::unique_ptr<TokenPiece>>& tokens) {
   const ErrorCode ec = ScanTokens(code, tokens);
   if (ec.IsFailure()) {
-    std::cerr << "Compilation failed.\n" << ec.ErrorMessage() << std::endl;
-    return;
+    std::cerr << "Compilation error.\n"
+              << ec.ErrorMessage() << std::endl;
+    return false;
   }
-  std::cout << "Compliation success!" << std::endl;
-  for (const auto& token : tokens) {
-    std::cout << "Token content: " << token->GetContent() << std::endl;
+  return true;
+}
+
+bool Parse(std::vector<std::unique_ptr<TokenPiece>>& tokens,
+           Module& module) {
+  const ErrorCode ec = ParseTokens(tokens, module);
+  if (ec.IsFailure()) {
+    std::cerr << "Compilation error.\n"
+              << ec.ErrorMessage() << std::endl;
+    return false;
   }
+  return true;
 }
 
 }  // namespace
@@ -53,6 +63,17 @@ int main(int argc, char** argv) {
     const std::string code{std::istreambuf_iterator<char>(filehandle),
                            std::istreambuf_iterator<char>()};
     filehandle.close();
-    pbc::Scan(code);
+    std::vector<std::unique_ptr<pbc::TokenPiece>> tokens;
+    if (!pbc::Scan(code, tokens)) {
+      std::cerr << "Compilation failed while scanning " << fname << std::endl;
+      return 2;
+    }
+    pbc::Module root;
+    if (!pbc::Parse(tokens, root)) {
+      std::cerr << "Compilation failed while parsing " << fname << std::endl;
+      return 3;
+    }
   }
+  std::cout << "Compilation successful!" << std::endl;
+  return 0;
 }
