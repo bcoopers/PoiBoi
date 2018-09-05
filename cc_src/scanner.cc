@@ -89,12 +89,13 @@ ErrorCode ProcessString(const std::string& code, size_t& curr_line_num,
   const size_t starting_line_num = curr_line_num;
   qstr.set_line_number(curr_line_num);
   assert(qstr.Search(*curr_char));
+  ++curr_char;
   for (; curr_char != code.end(); ++curr_char) {
-    if (*curr_char == '\n') {
-      ++curr_line_num;
-    }
     if (!qstr.Search(*curr_char) && qstr.IsFinalizable()) {
       return ErrorCode::Success();
+    }
+    if (*curr_char == '\n') {
+      ++curr_line_num;
     }
   }
   return qstr.IsFinalizable()

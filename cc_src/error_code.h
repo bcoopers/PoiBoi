@@ -17,6 +17,8 @@ limitations under the License.
 #ifndef _ERROR_CODE_H_
 #define _ERROR_CODE_H_
 
+#include <string>
+
 namespace pbc {
 
 class ErrorCode {

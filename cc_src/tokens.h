@@ -45,72 +45,85 @@ class MatchTokenPiece : public TokenPiece {
   virtual ~MatchTokenPiece() {};
 
   bool Search(char c) override {
-    return num_chars_processed_ < length_ &&
-           c == GetContent()[num_chars_processed_++];
+    if (num_chars_processed_ < GetLength()) {
+      hit_error_ = hit_error_ || c != GetContent()[num_chars_processed_];
+      if (!hit_error_) {
+        num_chars_processed_++;
+        return true;
+      }
+    }
+    return false;
   }
 
-  size_t GetLength() const override { return length_; }
-
   bool IsFinalizable() const override {
-    return num_chars_processed_ >= length_;
+    return num_chars_processed_ >= GetLength();
   }
 
  private:
+  bool hit_error_ = false;
   size_t num_chars_processed_ = 0;
-  size_t length_ = strlen(GetContent());
 };
 
 // Opens a block of code with {, after an IF, WHILE, or function definition.
 class OpenCodeBlock : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "{"; }
 };
 
 // Closes a block of code with }, matches an OpenCodeBlock.
 class CloseCodeBlock : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "}"; }
 };
 
 // Ends most lines of code with ;.
 class EndStatement : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return ";"; }
 };
 
 // Opens the variables list when calling or declaring a function with (.
 class OpenFunctionCall : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "("; }
 };
 
 // Closes the variables list when calling or declaring a function with ).
 class CloseFunctionCall : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return ")"; }
 };
 
 // Separates variables in list when calling or declaring a function with ,.
 class ArgumentListSeparator : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return ","; }
 };
 
 // Opens the conditional in an IF or WHILE with [.
 class OpenConditionalBlock : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "["; }
 };
 
 // Closes OpenConditionalBlock with ].
 class CloseConditionalBlock : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "]"; }
 };
 
 // Assigns an RValue to a variable with =.
 class Assigner : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 1; }
   const char* GetContent() const override { return "="; }
 };
 
@@ -118,48 +131,56 @@ class Assigner : public MatchTokenPiece {
 // TODO: This will be deprecated.
 class KeywordLocal : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 5; }
   const char* GetContent() const override { return "LOCAL"; }
 };
 
 // Specifies a variable is a global variable.
 class KeywordGlobal : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 6; }
   const char* GetContent() const override { return "GLOBAL"; }
 };
 
 // Starts a WHILE loop.
 class KeywordWhile : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 5; }
   const char* GetContent() const override { return "WHILE"; }
 };
 
 // Starts an IF statement.
 class KeywordIf : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 2; }
   const char* GetContent() const override { return "IF"; }
 };
 
 // Following an if statement, tarts an ELSE clase.
 class KeywordElse : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 4; }
   const char* GetContent() const override { return "ELSE"; }
 };
 
 // Starts following an if statement, starts an "else if" clause.
 class KeywordElif : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 4; }
   const char* GetContent() const override { return "ELIF"; }
 };
 
 // Allows early termination from a function.
 class KeywordReturn : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 6; }
   const char* GetContent() const override { return "RETURN"; }
 };
 
 // Allows early termination from a loop.
 class KeywordBreak : public MatchTokenPiece {
  public:
+  size_t GetLength() const override { return 5; }
   const char* GetContent() const override { return "BREAK"; }
 };
 
