@@ -30,7 +30,6 @@ class TokenPiece : public GrammarPiece {
  public:
   virtual ~TokenPiece() {};
   virtual bool Search(char c) = 0;
-  virtual const char* GetContent() const = 0;
   virtual size_t GetLength() const = 0;
   virtual bool IsFinalizable() const = 0;
 

@@ -94,6 +94,11 @@ class GrammarPiece {
     return GetLabel() < GrammarLabel::MODULE;
   }
 
+  virtual const char* GetContent() const {
+    assert(false);
+    return nullptr;
+  }
+
   virtual const char* DebugDescription() const = 0;
 
   const std::vector<std::unique_ptr<GrammarPiece>>& GetChildren() const {
