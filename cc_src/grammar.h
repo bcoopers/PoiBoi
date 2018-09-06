@@ -28,14 +28,19 @@ limitations under the License.
 
 namespace pbc {
 
-// Represents a valid PoiBoi file. Just a series of function definitions.
-class Module : public GrammarPiece {
+template<typename Descendent>
+class ExpandableGrammarPiece : public GrammarPiece {
  public:
   std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new Module);
+    std::unique_ptr<GrammarPiece> gp(new Descendent);
     CloneGPBase(gp.get());
     return gp;
   }
+};
+
+// Represents a valid PoiBoi file. Just a series of function definitions.
+class Module : public ExpandableGrammarPiece<Module> {
+ public:
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override { return GrammarLabel::MODULE; }
   const char* DebugDescription() const override {
@@ -46,13 +51,8 @@ class Module : public GrammarPiece {
 
 // Function definitions have the function name, argument list, and the code
 // which defines the function.
-class FunctionDefinition : public GrammarPiece {
+class FunctionDefinition : public ExpandableGrammarPiece<FunctionDefinition> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new FunctionDefinition);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::FUNCTION_DEFINITION;
@@ -66,13 +66,8 @@ class FunctionDefinition : public GrammarPiece {
 // 1. Empty
 // 2. Contain exactly one variable
 // 3. Contain multiple variables separated by commas.
-class VariablesList : public GrammarPiece {
+class VariablesList : public ExpandableGrammarPiece<VariablesList> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new VariablesList);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::VARIABLES_LIST;
@@ -82,13 +77,9 @@ class VariablesList : public GrammarPiece {
   }
 };
 
-class VariablesListExpansion : public GrammarPiece {
+class VariablesListExpansion
+      : public ExpandableGrammarPiece<VariablesListExpansion> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new VariablesListExpansion);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::VARIABLES_LIST_EXPANSION;
@@ -99,13 +90,8 @@ class VariablesListExpansion : public GrammarPiece {
 };
 
 // A code block is all valid code surrounded by {}.
-class CodeBlock : public GrammarPiece {
+class CodeBlock : public ExpandableGrammarPiece<CodeBlock> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new CodeBlock);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::CODE_BLOCK;
@@ -116,13 +102,8 @@ class CodeBlock : public GrammarPiece {
 };
 
 // A StatementList is all valid code, or empty.
-class StatementList : public GrammarPiece {
+class StatementList : public ExpandableGrammarPiece<StatementList> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new StatementList);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::STATEMENT_LIST;
@@ -134,13 +115,8 @@ class StatementList : public GrammarPiece {
 
 // A statement is variable assignment, function call,
 // a while loop, an if/else statement, a return statement.
-class Statement : public GrammarPiece {
+class Statement : public ExpandableGrammarPiece<Statement> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new Statement);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::STATEMENT;
@@ -151,13 +127,8 @@ class Statement : public GrammarPiece {
 };
 
 // Assigns either a global or local variable to an RValue.
-class VariableAssignment : public GrammarPiece {
+class VariableAssignment : public ExpandableGrammarPiece<VariableAssignment> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new VariableAssignment);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::VARIABLE_ASSIGNMENT;
@@ -168,13 +139,8 @@ class VariableAssignment : public GrammarPiece {
 };
 
 // Assigns either a global or local variable to an RValue.
-class FunctionCall : public GrammarPiece {
+class FunctionCall : public ExpandableGrammarPiece<FunctionCall> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new FunctionCall);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::FUNCTION_CALL;
@@ -185,13 +151,9 @@ class FunctionCall : public GrammarPiece {
 };
 
 // For evaluating an if/elif/while statement. Looks like: [RValue].
-class ConditionalEvaluator : public GrammarPiece {
+class ConditionalEvaluator
+      : public ExpandableGrammarPiece<ConditionalEvaluator> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new ConditionalEvaluator);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::CONDITIONAL_EVALUATOR;
@@ -202,13 +164,8 @@ class ConditionalEvaluator : public GrammarPiece {
 };
 
 // Can be empty, or an ELSE{}, or an ELSE IF [] {}
-class ElseStatement : public GrammarPiece {
+class ElseStatement : public ExpandableGrammarPiece<ElseStatement> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new ElseStatement);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::ELSE_STATEMENT;
@@ -220,13 +177,8 @@ class ElseStatement : public GrammarPiece {
 
 // An RValue is something which returns a string. So it's a raw string,
 // a variable, or a function call.
-class RValue : public GrammarPiece {
+class RValue : public ExpandableGrammarPiece<RValue> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new RValue);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::RVALUE;
@@ -239,13 +191,8 @@ class RValue : public GrammarPiece {
 
 // An RValue list is either empty, contains one RValue, or multiple RValues
 // separated by ,
-class RValueList : public GrammarPiece {
+class RValueList : public ExpandableGrammarPiece<RValueList> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new RValueList);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::RVALUE_LIST;
@@ -256,13 +203,8 @@ class RValueList : public GrammarPiece {
   }
 };
 
-class RValueListExpansion : public GrammarPiece {
+class RValueListExpansion : public ExpandableGrammarPiece<RValueListExpansion> {
  public:
-  std::unique_ptr<GrammarPiece> Clone() const override {
-    std::unique_ptr<GrammarPiece> gp(new RValueListExpansion);
-    CloneGPBase(gp.get());
-    return gp;
-  }
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {
     return GrammarLabel::RVALUE_LIST_EXPANSION;
