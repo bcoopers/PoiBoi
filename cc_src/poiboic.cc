@@ -18,6 +18,7 @@ limitations under the License.
 #include <iostream>
 #include <streambuf>
 #include <string>
+#include <vector>
 
 #include "parser.h"
 #include "scanner.h"
@@ -52,6 +53,8 @@ bool Parse(std::vector<std::unique_ptr<TokenPiece>>& tokens,
 }  // namespace pbc
 
 int main(int argc, char** argv) {
+  std::vector<pbc::Module> roots;
+  roots.reserve(argc - 1);
   for (int i = 1; i < argc; ++i) {
     const char* fname = argv[i];
     std::fstream filehandle;
@@ -68,8 +71,11 @@ int main(int argc, char** argv) {
       std::cerr << "Compilation failed while scanning " << fname << std::endl;
       return 2;
     }
-    pbc::Module root;
-    if (!pbc::Parse(tokens, root)) {
+    for (auto& token : tokens) {
+      token->set_file_name(fname);
+    }
+    roots.emplace_back();
+    if (!pbc::Parse(tokens, roots.back())) {
       std::cerr << "Compilation failed while parsing " << fname << std::endl;
       return 3;
     }

@@ -49,6 +49,7 @@ bool Expand(const GrammarPiece& gp, const TokenPiece& token,
   }
   for (auto& piece : expansion) {
     piece->set_line_number(token.line_number());
+    piece->set_file_name(token.file_name());
   }
   return allow_empty_expansion || !expansion.empty();
 }
@@ -59,6 +60,7 @@ ErrorCode ParseTokens(std::vector<std::unique_ptr<TokenPiece>>& tokens,
   assert(tokens.size() > 0);
   root = Module();
   root.set_line_number(0);
+  root.set_file_name(tokens.front()->file_name());
   std::vector<GrammarPiece*> current_program;
   current_program.emplace_back(&root);
   size_t token_index = 0;
