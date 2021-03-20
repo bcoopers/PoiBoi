@@ -209,7 +209,7 @@ size_t JoinLength(const JoinResult& jp) {
 }
 const char* JoinPayloadRawString(JoinType type, const JoinPayload& jp) {
   switch (type) {
-    case STATIC_STRING:
+    case JOINED_STATIC_STRING:
       return jp.static_string.string;
     case JOINED_REF_COUNTED_STRING:
       return jp.ref_counted_string.string;
