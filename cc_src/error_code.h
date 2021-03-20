@@ -24,18 +24,15 @@ namespace pbc {
 
 class ErrorCode {
  public:
-  static ErrorCode Success() {
-    ErrorCode ec;
-    ec.success_ = true;
-    return ec;
-  }
+  struct Success{};
 
-  static ErrorCode Failure(std::string msg) {
-    ErrorCode ec;
-    ec.success_ = false;
-    ec.error_msg_ = std::move(msg);
-    return ec;
-  }
+  struct Failure {
+    explicit Failure(std::string msg) : error_msg_(msg) {}
+    std::string error_msg_;
+  };
+
+  ErrorCode(ErrorCode::Success s) : success_(true) {}
+  ErrorCode(ErrorCode::Failure f) : success_(false), error_msg_(std::move(f.error_msg_)) {}
 
   bool IsSuccess() const { return success_; }
 
@@ -45,7 +42,6 @@ class ErrorCode {
 
 
  private:
-  ErrorCode() {}
   bool success_ = false;
   std::string error_msg_;
 };
@@ -53,35 +49,30 @@ class ErrorCode {
 template<typename T>
 class ErrorOr {
  public:
-  ErrorOr(T t) {
-    item_ = std::move(t);
-  }
+  ErrorOr(T t) : item_(std::move(t)) {}
 
-  static ErrorOr Failure(std::string msg) {
-    ErrorOr e;
-    e.error_msg_ = std::move(msg);
-    return e;
-  }
+  ErrorOr(ErrorCode::Failure f) : error_msg_(std::move(f.error_msg_)) {}
 
   bool IsSuccess() const { return item_.has_value(); }
 
   bool IsFailure() const { return !IsSuccess(); }
 
-  T& GetItem() { return item_.get(); }
+  T& GetItem() { return item_.value(); }
 
-  const T& GetItem() const { return item_.get(); }
+  const T& GetItem() const { return item_.value(); }
 
   const std::string& ErrorMessage() const { return error_msg_; }
 
  private:
+  ErrorOr() {}
   std::optional<T> item_;
   std::string error_msg_;
 };
 
 #define RETURN_EC_IF_FAILURE(ec) {  \
-  const ErrorCode local_ec_x20x20x = (ec); \
-  if (local_ec_x20x20x.IsFailure()) { \
-    return local_ec_x20x20x; \
+  const auto& local_ec = (ec); \
+  if (local_ec.IsFailure()) { \
+    return ErrorCode::Failure(local_ec.ErrorMessage()); \
   } \
 }
 

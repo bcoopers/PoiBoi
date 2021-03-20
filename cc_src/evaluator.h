@@ -22,19 +22,26 @@ limitations under the License.
 
 #include "error_code.h"
 #include "grammar.h"
-#include "tokens.h"
 #include "interpretation_context.h"
 
 namespace pbc {
 
-class StatementEvaluator;
+class StatementEvaluator {
+ public:
+  static ErrorOr<std::unique_ptr<StatementEvaluator>> TryCreate(
+    const Statement& statement, CompilationContext& context);
+  virtual std::string GetCode() const = 0;
+  virtual ~StatementEvaluator() {}
+};
 
 class CodeBlockEvaluator {
  public:
   static ErrorOr<CodeBlockEvaluator> TryCreate(
-    const CodeBlock& code_block, CompilationContext& context);
+    const CodeBlock& code_block, CompilationContext context);
   std::string GetCode() const;
  private:
+  CodeBlockEvaluator(std::vector<std::unique_ptr<StatementEvaluator>> e) :
+      evaluators_(std::move(e)) {}
   std::vector<std::unique_ptr<StatementEvaluator>> evaluators_;
 };
 

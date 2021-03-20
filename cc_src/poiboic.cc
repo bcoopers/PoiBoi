@@ -93,7 +93,7 @@ int main(int argc, char** argv) {
   }
   std::string code;
   if (!pbc::Generate(roots, code)) {
-    std::cerr << "Compilation failed in code generation.";
+    std::cerr << "Compilation failed in code generation." << std::endl;
     return 4;
   }
   std::cout << "Compilation successful!" << std::endl;

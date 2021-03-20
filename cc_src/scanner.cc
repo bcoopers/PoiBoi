@@ -98,10 +98,11 @@ ErrorCode ProcessString(const std::string& code, size_t& curr_line_num,
       ++curr_line_num;
     }
   }
-  return qstr.IsFinalizable()
-         ? ErrorCode::Success()
-         : ErrorCode::Failure("Line " + std::to_string(starting_line_num + 1) +
-                              ": String starting here did not terminate.");
+  if (qstr.IsFinalizable()) {
+    return ErrorCode::Success();
+  }
+  return ErrorCode::Failure("Line " + std::to_string(starting_line_num + 1) +
+                            ": String starting here did not terminate.");
 }
 
 // Step 1 is to find strings, strip comments, and divide into lines and pieces

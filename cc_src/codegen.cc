@@ -21,6 +21,7 @@ limitations under the License.
 #include <streambuf>
 
 #include "code_suffices.h"
+#include "evaluator.h"
 #include "function.h"
 #include "interpretation_context.h"
 
@@ -53,8 +54,9 @@ ErrorCode GetFunctionDefinition(const Function& fn, CompilationContext& context,
                                 std::string& code) {
   code = GetFunctionDeclaration(fn) + "{\n";
 
-  // TODO: Flesh this out.
-  code += "}\n\n";
+  const auto evaluator = CodeBlockEvaluator::TryCreate(fn.GetCode(), context);
+  RETURN_EC_IF_FAILURE(evaluator);
+  code += evaluator.GetItem().GetCode() + "\nreturn PBString();\n}\n\n\n";
   return ErrorCode::Success();
 }
 }  // namespace
