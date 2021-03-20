@@ -14,17 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef _POIBOI_EXECUTABLE_
+#ifndef POIBOI_EXECUTABLE_
 // Don't need to include the .h file in a PoiBoi executable, everything will
 // be concatted into one file.
 #include "poiboi_string.h"
 #else
 // Always want to use assertions in a non-executable. In the executable it may
 // be triggered by compilation mode.
-#define _POIBOI_INCLUDE_ASSERT_
+#define POIBOI_INCLUDE_ASSERT_
 #endif
 
-#ifdef _POIBOI_INCLUDE_ASSERT_
+#ifdef POIBOI_INCLUDE_ASSERT_
 #define ASSERT(x) assert(x)
 #define CRASH_RETURN(x) assert(false); return x
 #else

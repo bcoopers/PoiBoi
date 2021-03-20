@@ -1,5 +1,5 @@
 '''
-Copyright 2018 Brian Coopersmith
+Copyright 2021 Brian Coopersmith
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ def CompileModules(modules):
     functions_dict = function.GetFunctionsDict(functions_list)
     if functions_dict == None:
         return None
-    code = "#define _POIBOI_EXECUTABLE_\n"
-    code += "#define _POIBOI_INCLUDE_ASSERT_\n"
+    code = "#define POIBOI_EXECUTABLE_\n"
+    code += "#define POIBOI_INCLUDE_ASSERT_\n"
     f = file(os.path.join(os.path.dirname(__file__), '..', 'cc_src', 'poiboi_string.h'))
     for line in f:
         code += line
