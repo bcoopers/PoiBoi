@@ -107,12 +107,12 @@ GrammarPiece::Descendents Statement::GetDescendents() const {
 
   d.emplace_back();
   d.back().emplace_back(new KeywordWhile);
-  d.back().emplace_back(new ConditionalEvaluator);
+  d.back().emplace_back(new ConditionalEvaluation);
   d.back().emplace_back(new CodeBlock);
 
   d.emplace_back();
   d.back().emplace_back(new KeywordIf);
-  d.back().emplace_back(new ConditionalEvaluator);
+  d.back().emplace_back(new ConditionalEvaluation);
   d.back().emplace_back(new CodeBlock);
   d.back().emplace_back(new ElseStatement);
 
@@ -169,7 +169,7 @@ GrammarPiece::Descendents FunctionCall::GetDescendents() const {
   return d;
 }
 
-GrammarPiece::Descendents ConditionalEvaluator::GetDescendents() const {
+GrammarPiece::Descendents ConditionalEvaluation::GetDescendents() const {
   Descendents d;
 
   d.emplace_back();
@@ -189,7 +189,7 @@ GrammarPiece::Descendents ElseStatement::GetDescendents() const {
 
   d.emplace_back();
   d.back().emplace_back(new KeywordElif);
-  d.back().emplace_back(new ConditionalEvaluator);
+  d.back().emplace_back(new ConditionalEvaluation);
   d.back().emplace_back(new CodeBlock);
   d.back().emplace_back(new ElseStatement);
 

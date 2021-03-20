@@ -151,8 +151,8 @@ class FunctionCall : public ExpandableGrammarPiece<FunctionCall> {
 };
 
 // For evaluating an if/elif/while statement. Looks like: [RValue].
-class ConditionalEvaluator
-      : public ExpandableGrammarPiece<ConditionalEvaluator> {
+class ConditionalEvaluation
+      : public ExpandableGrammarPiece<ConditionalEvaluation> {
  public:
   Descendents GetDescendents() const override;
   GrammarLabel GetLabel() const override {

@@ -3,8 +3,11 @@
 #include <string>
 #include <fstream>
 #include <streambuf>
+#include <variant>
 
 #include "function.h"
+#include "grammar.h"
+#include "tokens.h"
 #include "interpretation_context.h"
 
 namespace pbc {
@@ -34,6 +37,97 @@ std::string GetFunctionDeclaration(const Function& fn) {
   code += ")";
   return code;
 }
+
+class StatementEvaluator {
+ public:
+  static std::unique_ptr<StatementEvaluator> Create(const Statement& statement);
+  virtual ErrorCode GetCode(CompilationContext& context, std::string& code) const = 0;
+};
+
+
+class CodeBlockEvaluator {
+ public:
+  CodeBlockEvaluator(const CodeBlock& code_block);
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const;
+ private:
+  std::vector<std::unique_ptr<StatementEvaluator>> evaluators_;
+};
+
+class FunctionCallEvaluator;
+
+class RValueEvaluator {
+ public:
+  RValueEvaluator(const RValue& rv);
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const;
+ private:
+  std::variant<QuotedString, Variable, std::unique_ptr<FunctionCallEvaluator>> op_;
+};
+
+class VariableAssignmentEvaluator : public StatementEvaluator {
+ public:
+  VariableAssignmentEvaluator(const VariableAssignment& va);
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const override;
+ private:
+  struct VarAssign {
+    bool is_local = true;
+    std::string name;
+    RValueEvaluator e;
+  };
+  std::vector<VarAssign> var_assigns_;
+};
+
+class FunctionCallEvaluator : public StatementEvaluator {
+   public:
+    FunctionCallEvaluator(const FunctionCall& fc);
+    ErrorCode GetCode(CompilationContext& context, std::string& code) const override;
+   private:
+    bool is_builtin = true;
+    std::string name;
+    std::vector<RValueEvaluator> args;
+};
+
+class WhileEvaluator : public StatementEvaluator {
+ public:
+  WhileEvaluator(const ConditionalEvaluation& ce, const CodeBlock& cb);
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const override;
+ private:
+  RValueEvaluator conditional_;
+  CodeBlockEvaluator cbe_;
+};
+
+class ElseEvaluator {
+ public:
+  ElseEvaluator(const ElseStatement& ee);
+  ErrorCode GetCode(CompilationContext& context, std::string& code);
+ private:
+  std::unique_ptr<RValueEvaluator> maybe_conditional_;
+  CodeBlockEvaluator cbe_;
+  std::unique_ptr<ElseEvaluator> maybe_else_;
+};
+
+class IfEvaluator : public StatementEvaluator {
+ public:
+  IfEvaluator(const ConditionalEvaluation& ce, const CodeBlock& cb, const ElseStatement& ee);
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const override;
+ private:
+  RValueEvaluator conditional_;
+  CodeBlockEvaluator cbe_;
+  std::unique_ptr<ElseEvaluator> maybe_else_;
+};
+
+class ReturnEvaluator : public StatementEvaluator {
+ public:
+  ReturnEvaluator(const RValue& rvalue);
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const override;
+ private:
+  RValueEvaluator rve_;
+};
+
+class BreakEvaluator : public StatementEvaluator {
+ public:
+  BreakEvaluator();
+  ErrorCode GetCode(CompilationContext& context, std::string& code) const override;
+};
 
 ErrorCode GetFunctionDefinition(const Function& fn, CompilationContext& context,
                                 std::string& code) {
