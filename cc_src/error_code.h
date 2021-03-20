@@ -17,6 +17,7 @@ limitations under the License.
 #ifndef POIBOIC_ERROR_CODE_H_
 #define POIBOIC_ERROR_CODE_H_
 
+#include <optional>
 #include <string>
 
 namespace pbc {
@@ -49,10 +50,38 @@ class ErrorCode {
   std::string error_msg_;
 };
 
+template<typename T>
+class ErrorOr {
+ public:
+  ErrorOr(T t) {
+    item_ = std::move(t);
+  }
+
+  static ErrorOr Failure(std::string msg) {
+    ErrorOr e;
+    e.error_msg_ = std::move(msg);
+    return e;
+  }
+
+  bool IsSuccess() const { return item_.has_value(); }
+
+  bool IsFailure() const { return !IsSuccess(); }
+
+  T& GetItem() { return item_.get(); }
+
+  const T& GetItem() const { return item_.get(); }
+
+  const std::string& ErrorMessage() const { return error_msg_; }
+
+ private:
+  std::optional<T> item_;
+  std::string error_msg_;
+};
+
 #define RETURN_EC_IF_FAILURE(ec) {  \
-  const ErrorCode local_ec = ec; \
-  if (local_ec.IsFailure()) { \
-    return local_ec; \
+  const ErrorCode local_ec_x20x20x = (ec); \
+  if (local_ec_x20x20x.IsFailure()) { \
+    return local_ec_x20x20x; \
   } \
 }
 
