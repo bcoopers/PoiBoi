@@ -20,6 +20,7 @@ limitations under the License.
 #include <string>
 #include <vector>
 
+#include "codegen.h"
 #include "parser.h"
 #include "scanner.h"
 #include "tokens.h"
@@ -41,6 +42,16 @@ bool Scan(const std::string& code,
 bool Parse(std::vector<std::unique_ptr<TokenPiece>>& tokens,
            Module& module) {
   const ErrorCode ec = ParseTokens(tokens, module);
+  if (ec.IsFailure()) {
+    std::cerr << "Compilation error.\n"
+              << ec.ErrorMessage() << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool Generate(const std::vector<Module>& modules, std::string& code) {
+  const ErrorCode ec = GenerateCode(modules, code);
   if (ec.IsFailure()) {
     std::cerr << "Compilation error.\n"
               << ec.ErrorMessage() << std::endl;
@@ -79,6 +90,11 @@ int main(int argc, char** argv) {
       std::cerr << "Compilation failed while parsing " << fname << std::endl;
       return 3;
     }
+  }
+  std::string code;
+  if (!pbc::Generate(roots, code)) {
+    std::cerr << "Compilation failed in code generation.";
+    return 4;
   }
   std::cout << "Compilation successful!" << std::endl;
   return 0;
