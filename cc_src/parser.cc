@@ -26,7 +26,7 @@ std::string ErrorString(const GrammarPiece& gp, const TokenPiece& token) {
 }
 
 bool Expand(const GrammarPiece& gp, const TokenPiece& token,
-                 std::vector<std::unique_ptr<GrammarPiece>>& expansion) {
+            std::vector<std::unique_ptr<GrammarPiece>>& expansion) {
   expansion.clear();
   if (gp.GetLabel() == token.GetLabel()) {
     expansion.push_back(token.Clone());
@@ -72,7 +72,8 @@ ErrorCode ParseTokens(std::vector<std::unique_ptr<TokenPiece>>& tokens,
       return ErrorCode::Failure(ErrorString(gp, token));
     }
     if (gp.IsToken()) {
-      *current_program.front() = token;
+      TokenPiece& program_front = reinterpret_cast<TokenPiece&>(*current_program.front());
+      token.CopyTokenTo(&program_front);
       ++token_index;
       current_program.erase(current_program.begin());
     } else {

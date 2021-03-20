@@ -21,6 +21,7 @@ limitations under the License.
 #define POIBOIC_TOKENS_H_
 
 #include <string>
+#include <iostream>
 
 #include "grammar_piece.h"
 
@@ -35,6 +36,10 @@ class TokenPiece : public GrammarPiece {
 
   std::vector<std::vector<std::unique_ptr<GrammarPiece>>>
   GetDescendents() const override { return {}; }
+
+  // Copy the contents of this to other. Only works if other is of the same derived type as this.
+  virtual void CopyTokenTo(TokenPiece* other) const = 0;
+
  protected:
   void CloneTPBase(TokenPiece* tp) const {
     CloneGPBase(tp);
@@ -66,11 +71,16 @@ class MatchTokenPiece : public TokenPiece {
     return GetContent();
   }
 
+  void CopyTokenTo(TokenPiece* other) const override {
+    CloneTPBase(other);
+    auto& o = dynamic_cast<MatchTokenPiece<Derived>&>(*other);
+    o.hit_error_ = hit_error_;
+    o.num_chars_processed_ = num_chars_processed_;
+  }
+
   std::unique_ptr<GrammarPiece> Clone() const override {
     std::unique_ptr<MatchTokenPiece<Derived>> gp(new Derived);
-    CloneTPBase(gp.get());
-    gp->hit_error_ = hit_error_;
-    gp->num_chars_processed_ = num_chars_processed_;
+    CopyTokenTo(gp.get());
     return std::unique_ptr<GrammarPiece>(gp.release());
   }
 
@@ -255,12 +265,17 @@ class QuotedString : public TokenPiece {
  public:
   std::unique_ptr<GrammarPiece> Clone() const override {
     std::unique_ptr<QuotedString> gp(new QuotedString);
-    CloneTPBase(gp.get());
-    gp->content_ = content_;
-    gp->num_backslashes_in_row_ = num_backslashes_in_row_;
-    gp->no_more_ = no_more_;
-    gp->is_finalized_ = is_finalized_;
+    CopyTokenTo(gp.get());
     return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
+  void CopyTokenTo(TokenPiece* other) const override {
+    CloneTPBase(other);
+    auto& o = dynamic_cast<QuotedString&>(*other);
+    o.content_ = content_;
+    o.num_backslashes_in_row_ = num_backslashes_in_row_;
+    o.no_more_ = no_more_;
+    o.is_finalized_ = is_finalized_;
   }
 
   bool Search(char c) override;
@@ -294,10 +309,15 @@ class Variable : public TokenPiece {
  public:
   std::unique_ptr<GrammarPiece> Clone() const override {
     std::unique_ptr<Variable> gp(new Variable);
-    CloneTPBase(gp.get());
-    gp->content_ = content_;
-    gp->no_more_ = no_more_;
+    CopyTokenTo(gp.get());
     return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
+  void CopyTokenTo(TokenPiece* other) const override {
+    CloneTPBase(other);
+    auto& o = dynamic_cast<Variable&>(*other);
+    o.content_ = content_;
+    o.no_more_ = no_more_;
   }
 
   bool Search(char c) override;
@@ -326,10 +346,15 @@ class Builtin : public TokenPiece {
  public:
   std::unique_ptr<GrammarPiece> Clone() const override {
     std::unique_ptr<Builtin> gp(new Builtin);
-    CloneTPBase(gp.get());
-    gp->content_ = content_;
-    gp->no_more_ = no_more_;
+    CopyTokenTo(gp.get());
     return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
+  void CopyTokenTo(TokenPiece* other) const override {
+    CloneTPBase(other);
+    auto& o = dynamic_cast<Builtin&>(*other);
+    o.content_ = content_;
+    o.no_more_ = no_more_;
   }
 
   bool Search(char c) override;
@@ -359,11 +384,16 @@ class FunctionName : public TokenPiece {
  public:
   std::unique_ptr<GrammarPiece> Clone() const override {
     std::unique_ptr<FunctionName> gp(new FunctionName);
-    CloneTPBase(gp.get());
-    gp->content_ = content_;
-    gp->no_more_ = no_more_;
-    gp->contains_lower_case_ = contains_lower_case_;
+    CopyTokenTo(gp.get());
     return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
+  void CopyTokenTo(TokenPiece* other) const override {
+    CloneTPBase(other);
+    auto& o = dynamic_cast<FunctionName&>(*other);
+    o.content_ = content_;
+    o.no_more_ = no_more_;
+    o.contains_lower_case_ = contains_lower_case_;
   }
 
   bool Search(char c) override;
@@ -396,8 +426,13 @@ class EndOfFile : public TokenPiece {
  public:
   std::unique_ptr<GrammarPiece> Clone() const override {
     std::unique_ptr<EndOfFile> gp(new EndOfFile);
-    CloneTPBase(gp.get());
+    CopyTokenTo(gp.get());
     return std::unique_ptr<GrammarPiece>(gp.release());
+  }
+
+  void CopyTokenTo(TokenPiece* other) const override {
+    CloneTPBase(other);
+    assert(other->GetLabel() == this->GetLabel());
   }
 
   bool Search(char c) override { return false; }
