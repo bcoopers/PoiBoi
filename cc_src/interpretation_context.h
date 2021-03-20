@@ -17,12 +17,20 @@ limitations under the License.
 #ifndef POIBOIC_INTERPRETATION_CONTEXT_H_
 #define POIBOIC_INTERPRETATION_CONTEXT_H_
 
-// Context used for compilation/interpretation which is not available locally.
-struct InterpretationContext {
-  // Functions dict
-  // Local variables
-  // Global Variables
+#include <unordered_map>
+
+#include "function.h"
+
+namespace pbc {
+
+// Context used for compilation which is not available locally.
+struct CompilationContext {
+  const std::unordered_map<std::string, const Function*>* fns{};
+  std::vector<std::string>* global_variables{};
+  std::vector<std::string> local_variables;
   bool is_in_loop = false;
 };
+
+}  // namespace pbc
 
 #endif  // #ifndef POIBOIC_INTERPRETATION_CONTEXT_H_
