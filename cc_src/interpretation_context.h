@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef _INTERPRETATION_CONTEXT_H_
-#define _INTERPRETATION_CONTEXT_H_
+#ifndef POIBOIC_INTERPRETATION_CONTEXT_H_
+#define POIBOIC_INTERPRETATION_CONTEXT_H_
 
 // Context used for compilation/interpretation which is not available locally.
 struct InterpretationContext {
@@ -25,4 +25,4 @@ struct InterpretationContext {
   bool is_in_loop = false;
 };
 
-#endif  // #ifndef _INTERPRETATION_CONTEXT_H_
+#endif  // #ifndef POIBOIC_INTERPRETATION_CONTEXT_H_

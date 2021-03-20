@@ -17,8 +17,8 @@ limitations under the License.
 // Defines the full expansion of the PoiBoi grammar. Everything terminates
 // as tokens.
 
-#ifndef _GRAMMAR_H_
-#define _GRAMMAR_H_
+#ifndef POIBOIC_GRAMMAR_H_
+#define POIBOIC_GRAMMAR_H_
 
 #include <memory>
 #include <string>
@@ -217,4 +217,4 @@ class RValueListExpansion : public ExpandableGrammarPiece<RValueListExpansion> {
 
 }  // namespace pbc
 
-#endif  // #ifndef _GRAMMAR_H_
+#endif  // #ifndef POIBOIC_GRAMMAR_H_

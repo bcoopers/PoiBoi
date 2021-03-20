@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef _SCANNER_H_
-#define _SCANNER_H_
+#ifndef POIBOIC_SCANNER_H_
+#define POIBOIC_SCANNER_H_
 
 #include "error_code.h"
 #include "tokens.h"
@@ -28,4 +28,4 @@ ErrorCode ScanTokens(const std::string& code,
 
 }  // namespace pbc
 
-#endif  // #ifndef _SCANNER_H_
+#endif  // #ifndef POIBOIC_SCANNER_H_

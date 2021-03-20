@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef _POIBOI_STRING_H_
-#define _POIBOI_STRING_H_
+#ifndef POIBOI_STRING_H_
+#define POIBOI_STRING_H_
 
 #include <cassert>
 #include <cstdio>
@@ -186,4 +186,4 @@ inline PBString Builtin_Strlen(const PBString& s) {
 PBString Builtin_Substring(
     const PBString& s, const PBString& start_str, const PBString& end_str);
 
-#endif  // #ifndef _POIBOI_STRING_H_
+#endif  // #ifndef POIBOI_STRING_H_

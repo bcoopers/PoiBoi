@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef _PARSER_H_
-#define _PARSER_H_
+#ifndef POIBOIC_PARSER_H_
+#define POIBOIC_PARSER_H_
 
 #include <memory>
 #include <vector>
@@ -29,4 +29,4 @@ ErrorCode ParseTokens(std::vector<std::unique_ptr<TokenPiece>>& tokens,
                       Module& root);
 }  // namespace pbc
 
-#endif  // #ifndef _PARSER_H_
+#endif  // #ifndef POIBOIC_PARSER_H_

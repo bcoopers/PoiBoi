@@ -16,8 +16,8 @@ limitations under the License.
 
 // Defines the interface that all pieces of the PoiBoi grammar must satisfy.
 
-#ifndef _GRAMMAR_PIECE_H_
-#define _GRAMMAR_PIECE_H_
+#ifndef POIBOIC_GRAMMAR_PIECE_H_
+#define POIBOIC_GRAMMAR_PIECE_H_
 
 #include <memory>
 #include <string>
@@ -138,4 +138,4 @@ class GrammarPiece {
 
 }  // namespace pbc
 
-#endif  // #ifndef _GRAMMAR_PIECE_H_
+#endif  // #ifndef POIBOIC_GRAMMAR_PIECE_H_

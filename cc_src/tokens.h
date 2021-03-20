@@ -17,8 +17,8 @@ limitations under the License.
 // Contains a list of all tokens in PoiBoi, and functions defining what
 // sequences of characters satisfy them.
 
-#ifndef _TOKENS_H_
-#define _TOKENS_H_
+#ifndef POIBOIC_TOKENS_H_
+#define POIBOIC_TOKENS_H_
 
 #include <string>
 
@@ -419,4 +419,4 @@ class EndOfFile : public TokenPiece {
 
 }  // namespace pbc
 
-#endif  // #ifndef _TOKENS_H_
+#endif  // #ifndef POIBOIC_TOKENS_H_

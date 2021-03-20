@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef _ERROR_CODE_H_
-#define _ERROR_CODE_H_
+#ifndef POIBOIC_ERROR_CODE_H_
+#define POIBOIC_ERROR_CODE_H_
 
 #include <string>
 
@@ -58,4 +58,4 @@ class ErrorCode {
 
 }  // namespace pbc
 
-#endif  // #ifndef _ERROR_CODE_H_
+#endif  // #ifndef POIBOIC_ERROR_CODE_H_
