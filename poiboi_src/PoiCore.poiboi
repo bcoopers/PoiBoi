@@ -1,4 +1,4 @@
-# Copyright 2018 Brian Coopersmith #
+# Copyright 2021 Brian Coopersmith #
 # #
 # Licensed under the Apache License, Version 2.0 (the "License"); #
 # you may not use this file except in compliance with the License. #
@@ -53,7 +53,7 @@ PoiCoreFindBetween(str, substr, start, end) {
     end = STRLEN(str);
   }
   LOCAL cutStr = SUBSTRING(str, start, end);
-  LOCAL cutStrResult = PoiCoireFind(cutStr, substr);
+  LOCAL cutStrResult = PoiCoreFind(cutStr, substr);
   IF [EQUAL(cutStrResult, STRLEN(cutStr))] {
     RETURN STRLEN(str);
   }
