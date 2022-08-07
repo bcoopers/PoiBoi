@@ -68,7 +68,7 @@ ErrorCode GenerateCode(const std::vector<Module>& modules, std::string& code_out
     return ErrorCode::Success();
   }
   std::unordered_map<std::string, const Function*> functions_dict = GetFunctionsDict(functions);
-  std::vector<std::string> global_variables;
+  std::unordered_set<std::string> global_variables;
 
   code_out += "#define POIBOI_EXECUTABLE_\n#define POIBOI_INCLUDE_ASSERT_\n";
   AddPBStringSrc(code_out);

@@ -67,15 +67,53 @@ std::string VariableAssignmentEvaluator::GetCode() const {
   return "Unimplemented";
 }
 
-class BuiltinResolver {
-  static ErrorOr<BuiltinResolver> TryCreate(const std::string& name);
-  std::string GetCppName() const { return cpp_name_; }
- private:
-  std::string cpp_name_;
+enum class BuiltinType {
+  EQUALS,
+  PRINT,
+  CONCAT,
+  NOT,
+  AND,
+  OR,
+  STRLEN,
+  SUBSTRING,
 };
 
-ErrorOr<BuiltinResolver> BuiltinResolver::TryCreate(const std::string& name) {
-  return ErrorCode::Failure("Unimplemented");
+class BuiltinResolver {
+ public:
+  static ErrorOr<BuiltinResolver> TryCreate(
+      const std::string& name, size_t line_num, const std::string& fname);
+  const std::string& GetCppName() const { return cpp_name_; }
+  int GetNumArgs() const { return num_args_; }
+
+ private:
+  BuiltinResolver(BuiltinType type, std::string cpp_name, int num_args)
+      : /*type_(type),*/ cpp_name_(std::move(cpp_name)), num_args_(num_args) {}
+  // BuiltinType type_;
+  std::string cpp_name_;
+  int num_args_{};
+};
+
+ErrorOr<BuiltinResolver> BuiltinResolver::TryCreate(
+    const std::string& name, size_t line_num, const std::string& fname) {
+  if (name == "EQUALS") {
+    return BuiltinResolver(BuiltinType::EQUALS, "Builtin_Equals", 2);
+  } else if (name == "PRINT") {
+    return BuiltinResolver(BuiltinType::PRINT, "Builtin_Print", 1);
+  } else if (name == "CONCAT") {
+    return BuiltinResolver(BuiltinType::CONCAT, "Builtin_Concat", 2);
+  } else if (name == "NOT") {
+    return BuiltinResolver(BuiltinType::NOT, "Builtin_Not", 1);
+  } else if (name == "AND") {
+    return BuiltinResolver(BuiltinType::AND, "Builtin_And", 2);
+  } else if (name == "OR") {
+    return BuiltinResolver(BuiltinType::OR, "Builtin_Or", 2);
+  } else if (name == "STRLEN") {
+    return BuiltinResolver(BuiltinType::STRLEN, "Builtin_Strlen", 1);
+  } else if (name == "SUBSTRING") {
+    return BuiltinResolver(BuiltinType::SUBSTRING, "Builtin_Substring", 3);
+  }
+  return ErrorCode::Failure("File: " + fname + "; line: " + std::to_string(line_num) +
+                            "; Invalid builtin fn: " + name);
 }
 
 class FunctionCallEvaluator : public StatementEvaluator {
@@ -87,8 +125,34 @@ class FunctionCallEvaluator : public StatementEvaluator {
     std::vector<RValueEvaluator> args;
 };
 
+
 ErrorOr<FunctionCallEvaluator> FunctionCallEvaluator::TryCreate(
     const FunctionCall& fc, CompilationContext& context) {
+  const auto& fc_children = fc.GetChildren();
+  assert(fc_children.size() == 4);
+  const auto& child0 = fc_children[0];
+  int num_args = 0;
+  std::variant<std::string, BuiltinResolver> fn_name_or_builtin{""};
+  if (child0->GetLabel() == GrammarLabel::BUILTIN) {
+    auto builtin = BuiltinResolver::TryCreate(
+        child0->GetContent(), child0->line_number(), child0->file_name());
+    RETURN_EC_IF_FAILURE(builtin);
+    fn_name_or_builtin = std::move(builtin.GetItem());
+    num_args = builtin.GetItem().GetNumArgs();
+  } else {
+    assert(child0->GetLabel() == GrammarLabel::FUNCTION_NAME);
+    const std::string fn_name = child0->GetContent();
+    fn_name_or_builtin = fn_name;
+    auto fn_it = context.fns->find(fn_name);
+    if (fn_it == context.fns->end()) {
+      return ErrorCode::Failure("File: " + child0->file_name() + "; line: " +
+                                std::to_string(child0->line_number()) +
+                                "; Tries to call undefined function: " + fn_name);
+    }
+    fn_name_or_builtin = fn_name;
+    num_args = fn_it->second->GetVariablesList().size();
+  }
+  // Todo: Evaluate Rvals, check if num args match.
   return ErrorCode::Failure("FunctionCallEvaluator unimplemented.");
 }
 
