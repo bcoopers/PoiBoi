@@ -138,7 +138,7 @@ class VariableAssignment : public ExpandableGrammarPiece<VariableAssignment> {
   }
 };
 
-// Assigns either a global or local variable to an RValue.
+// Calls a function.
 class FunctionCall : public ExpandableGrammarPiece<FunctionCall> {
  public:
   Descendents GetDescendents() const override;

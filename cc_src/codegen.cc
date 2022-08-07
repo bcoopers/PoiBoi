@@ -77,7 +77,7 @@ ErrorCode GenerateCode(const std::vector<Module>& modules, std::string& code_out
     code_out += GetFunctionDeclaration(fn) + ";\n";
   }
 
-  CompilationContext context{.fns = &functions_dict, .global_variables = &global_variables};
+  CompilationContext context{.fns = &functions_dict, .all_global_variables = &global_variables};
 
   std::vector<std::string> fn_definitions;
   for (const Function& fn : functions) {

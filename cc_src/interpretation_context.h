@@ -18,6 +18,7 @@ limitations under the License.
 #define POIBOIC_INTERPRETATION_CONTEXT_H_
 
 #include <unordered_map>
+#include <unordered_set>
 
 #include "function.h"
 

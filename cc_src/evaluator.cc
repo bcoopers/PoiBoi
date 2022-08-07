@@ -121,39 +121,88 @@ class FunctionCallEvaluator : public StatementEvaluator {
     static ErrorOr<FunctionCallEvaluator> TryCreate(const FunctionCall& fc, CompilationContext& context);
     std::string GetCode() const override;
    private:
+    FunctionCallEvaluator(std::variant<std::string, BuiltinResolver> fnob, std::vector<RValueEvaluator> a) :
+      fn_name_or_builtin(std::move(fnob)), args(std::move(a)) {}
     std::variant<std::string, BuiltinResolver> fn_name_or_builtin;
     std::vector<RValueEvaluator> args;
 };
+
+namespace {
+
+std::vector<const RValue*> ExpandRValueList(const RValueList& rvl) {
+  std::vector<const RValue*> rv_vec;
+  const auto& rvl_children = rvl.GetChildren();
+  if (rvl_children.size() == 0) {
+    return rv_vec;
+  }
+  assert(rvl_children.size() == 2);
+  assert(rvl_children[0]->GetLabel() == GrammarLabel::RVALUE);
+  rv_vec.push_back(dynamic_cast<const RValue*>(&*rvl_children[0]));
+
+  assert(rvl_children[1]->GetLabel() == GrammarLabel::RVALUE_LIST_EXPANSION);
+  const RValueListExpansion* curr_expansion = dynamic_cast<const RValueListExpansion*>(&*rvl_children[1]);
+  while (!curr_expansion->GetChildren().empty()) {
+    const auto& expansion_children = curr_expansion->GetChildren();
+    assert(expansion_children.size() == 3);
+    assert(expansion_children[1]->GetLabel() == GrammarLabel::RVALUE);
+    rv_vec.push_back(dynamic_cast<const RValue*>(&*expansion_children[1]));
+    assert(expansion_children[2]->GetLabel() == GrammarLabel::RVALUE_LIST_EXPANSION);
+    curr_expansion = dynamic_cast<const RValueListExpansion*>(&*expansion_children[2]);
+  }
+  return rv_vec;
+}
+
+}  // namespace
 
 
 ErrorOr<FunctionCallEvaluator> FunctionCallEvaluator::TryCreate(
     const FunctionCall& fc, CompilationContext& context) {
   const auto& fc_children = fc.GetChildren();
   assert(fc_children.size() == 4);
-  const auto& child0 = fc_children[0];
+  const auto& child0 = *fc_children[0];
   int num_args = 0;
+  std::string debug_fn_name;
   std::variant<std::string, BuiltinResolver> fn_name_or_builtin{""};
-  if (child0->GetLabel() == GrammarLabel::BUILTIN) {
+  if (child0.GetLabel() == GrammarLabel::BUILTIN) {
+    debug_fn_name = std::string("builtin ") + child0.GetContent();
     auto builtin = BuiltinResolver::TryCreate(
-        child0->GetContent(), child0->line_number(), child0->file_name());
+        child0.GetContent(), child0.line_number(), child0.file_name());
     RETURN_EC_IF_FAILURE(builtin);
     fn_name_or_builtin = std::move(builtin.GetItem());
     num_args = builtin.GetItem().GetNumArgs();
   } else {
-    assert(child0->GetLabel() == GrammarLabel::FUNCTION_NAME);
-    const std::string fn_name = child0->GetContent();
+    assert(child0.GetLabel() == GrammarLabel::FUNCTION_NAME);
+    const std::string fn_name = child0.GetContent();
+    debug_fn_name = std::string("function ") + fn_name;
     fn_name_or_builtin = fn_name;
     auto fn_it = context.fns->find(fn_name);
     if (fn_it == context.fns->end()) {
-      return ErrorCode::Failure("File: " + child0->file_name() + "; line: " +
-                                std::to_string(child0->line_number()) +
+      return ErrorCode::Failure("File: " + child0.file_name() + "; line: " +
+                                std::to_string(child0.line_number()) +
                                 "; Tries to call undefined function: " + fn_name);
     }
     fn_name_or_builtin = fn_name;
     num_args = fn_it->second->GetVariablesList().size();
   }
-  // Todo: Evaluate Rvals, check if num args match.
-  return ErrorCode::Failure("FunctionCallEvaluator unimplemented.");
+  const auto& child2 = *fc_children[2];
+  assert(child2.GetLabel() == GrammarLabel::RVALUE_LIST);
+
+  std::vector<const RValue*> rvalue_args = ExpandRValueList(dynamic_cast<const RValueList&>(child2));
+  if (rvalue_args.size() != num_args) {
+    return ErrorCode::Failure("File: " + child0.file_name() + "; line: " +
+                              std::to_string(child0.line_number()) +
+                              "; Tries to call " + debug_fn_name + " with " +
+                              std::to_string(rvalue_args.size()) + " args, but expected " +
+                              std::to_string(num_args) + "args");
+  }
+  std::vector<RValueEvaluator> args;
+  args.reserve(num_args);
+  for (const RValue* rval : rvalue_args) {
+    auto rvalue_eval = RValueEvaluator::TryCreate(*rval, context);
+    RETURN_EC_IF_FAILURE(rvalue_eval);
+    args.push_back(std::move(rvalue_eval.GetItem()));
+  }
+  return FunctionCallEvaluator(std::move(fn_name_or_builtin), std::move(args));
 }
 
 std::string FunctionCallEvaluator::GetCode() const {
