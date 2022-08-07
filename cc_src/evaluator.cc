@@ -206,7 +206,23 @@ ErrorOr<FunctionCallEvaluator> FunctionCallEvaluator::TryCreate(
 }
 
 std::string FunctionCallEvaluator::GetCode() const {
-  return "Unimplemented";
+  std::string code;
+  const std::string* fn_name = std::get_if<std::string>(&fn_name_or_builtin);
+  if (fn_name != nullptr) {
+    code += *fn_name + "(";
+  } else {
+    const BuiltinResolver* builtin = std::get_if<BuiltinResolver>(&fn_name_or_builtin);
+    assert(builtin != nullptr);
+    code += builtin->GetCppName() + "(";
+  }
+  for (int i = 0; i < args.size(); ++i) {
+    code += args.at(i).GetCode();
+    if (i + 1 != args.size()) {
+      code += ", ";
+    }
+  }
+  code += ");";
+  return code;
 }
 
 class WhileEvaluator : public StatementEvaluator {
