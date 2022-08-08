@@ -21,6 +21,7 @@ limitations under the License.
 #include <unordered_map>
 #include <vector>
 
+#include "error_code.h"
 #include "grammar.h"
 
 namespace pbc {
@@ -32,6 +33,8 @@ class Function {
   const std::vector<std::string>& GetVariablesList() const { return variables_list_; }
   const CodeBlock& GetCode() const { return *code_; }
 
+  const std::string& GetFileName() const { return file_name_; }
+  size_t GetLineNum() const { return line_num_; };
 
 
  private:
@@ -45,7 +48,7 @@ class Function {
 
 std::vector<Function> GetFunctionsFromModules(const std::vector<Module>& modules);
 
-std::unordered_map<std::string, const Function*> GetFunctionsDict(const std::vector<Function>& fns_list);
+ErrorOr<std::unordered_map<std::string, const Function*>> GetFunctionsDict(const std::vector<Function>& fns_list);
 
 }  // namespace pbc
 

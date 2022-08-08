@@ -19,5 +19,6 @@ namespace pbc {
 constexpr char kPbStringType[] = "PBString ";
 constexpr char kFnSuffix[] = "_poiboi_fn";
 constexpr char kLocalVarSuffix[] = "_local_poiboivar";
+constexpr char kGlobalVarSuffix[] = "_global_poiboivar";
 
 }  // namespace pbc

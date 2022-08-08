@@ -75,11 +75,17 @@ std::vector<Function> GetFunctionsFromModules(const std::vector<Module>& modules
   return functions;
 }
 
-std::unordered_map<std::string, const Function*> GetFunctionsDict(
+ErrorOr<std::unordered_map<std::string, const Function*>> GetFunctionsDict(
     const std::vector<Function>& fns_list) {
   std::unordered_map<std::string, const Function*> fns_dict;
   for (const Function& fn : fns_list) {
-    fns_dict[fn.GetName()] = &fn;
+    const Function*& val = fns_dict[fn.GetName()];
+    if (val != nullptr) {
+      return ErrorCode::Failure("File: " + fn.GetFileName() + "; line: " + std::to_string(fn.GetLineNum()) +
+                                "; Function " + fn.GetName() + " defined twice. Previously at file: " +
+                                val->GetFileName() + "; line: " + std::to_string(val->GetLineNum()));
+    }
+    val = &fn;
   }
   return fns_dict;
 }

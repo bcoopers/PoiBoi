@@ -16,6 +16,7 @@ limitations under the License.
 
 #include "codegen.h"
 
+#include <algorithm>
 #include <string>
 #include <fstream>
 #include <streambuf>
@@ -71,8 +72,21 @@ ErrorCode GenerateCode(const std::vector<Module>& modules, std::string& code_out
   if (functions.empty()) {
     return ErrorCode::Success();
   }
-  std::unordered_map<std::string, const Function*> functions_dict = GetFunctionsDict(functions);
+  auto maybe_fns_dict = GetFunctionsDict(functions);
+  RETURN_EC_IF_FAILURE(maybe_fns_dict);
+  std::unordered_map<std::string, const Function*> functions_dict = std::move(maybe_fns_dict.GetItem());
   std::unordered_set<std::string> global_variables;
+
+  const Function* main_fn = functions_dict["Main"];
+  if (main_fn == nullptr) {
+    return ErrorCode::Failure("No Main fn defined");
+  }
+
+  const int num_main_args = main_fn->GetVariablesList().size();
+  if (num_main_args > 1) {
+    return ErrorCode::Failure("File: " + main_fn->GetFileName() + "; line: " + std::to_string(main_fn->GetLineNum()) +
+                              "; Main accepts too many args: " + std::to_string(num_main_args));
+  }
 
   code_out += "#define POIBOI_EXECUTABLE_\n#define POIBOI_INCLUDE_ASSERT_\n";
   AddPBStringSrc(code_out);
@@ -88,7 +102,28 @@ ErrorCode GenerateCode(const std::vector<Module>& modules, std::string& code_out
     RETURN_EC_IF_FAILURE(GetFunctionDefinition(fn, context, fn_definitions.emplace_back()));
   }
 
-  // TODO: Add global variable, fn definitions, and main.
+  std::vector<std::string> sorted_globals(global_variables.begin(), global_variables.end());
+  std::sort(sorted_globals.begin(), sorted_globals.end());
+  for (const std::string& global : sorted_globals) {
+    code_out += std::string(kPbStringType) + global + kGlobalVarSuffix +";\n";
+  }
+
+  for (const std::string& fn_def : fn_definitions) {
+    code_out += fn_def + "\n\n\n";
+  }
+
+  const std::string main_cc_fn = std::string("Main") + kFnSuffix;
+
+  if (num_main_args == 0) {
+    code_out += "int main(int argc, char** argv) {\n";
+    code_out += main_cc_fn + "();\nreturn 0;\n}";
+  } else {
+    code_out += "int main(int argc, char** argv) {\n";
+    code_out += "if (argc == 1) {\n";
+    code_out += main_cc_fn + "(PBString());\n} else {\n";
+    code_out += main_cc_fn + "(PBString::NewStaticString(argv[1]));\n}";
+    code_out += "\nreturn 0;\n}";
+  }
 
   return ErrorCode::Success();
 }

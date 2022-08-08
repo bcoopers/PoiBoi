@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <variant>
 
+#include "code_suffices.h"
 #include "tokens.h"
 
 namespace pbc {
@@ -31,11 +32,11 @@ struct VariableAccessor {
 };
 
 std::string LocalVariableName(const std::string& name) {
-  return "LOCAL_VAR_" + name;
+  return name + kLocalVarSuffix;
 }
 
 std::string GlobalVariableName(const std::string& name) {
-  return "GLOBAL_VAR_" + name;
+  return name + kGlobalVarSuffix;
 }
 
 // Fill out.
@@ -110,14 +111,14 @@ ErrorOr<VariableAssignmentEvaluator> VariableAssignmentEvaluator::TryCreate(
 std::string VariableAssignmentEvaluator::GetCode() const {
   std::string code;
   if (is_local_ && !already_defined_) {
-    code += "PBString ";
+    code += kPbStringType;
   }
   if (is_local_) {
     code += LocalVariableName(name_);
   } else {
     code += GlobalVariableName(name_);
   }
-  code += " = " + e_.GetCode();
+  code += " = " + e_.GetCode() + ";\n";
   return code;
 }
 
@@ -216,7 +217,7 @@ std::string RValueEvaluator::GetCode() const {
   const VariableAccessor* variable = std::get_if<VariableAccessor>(&op_);
   const std::unique_ptr<FunctionCallEvaluator>* fn_call = std::get_if<std::unique_ptr<FunctionCallEvaluator>>(&op_);
   if (quoted_string != nullptr) {
-    return quoted_string->GetContent();
+    return std::string("PBString::NewStaticString(") + quoted_string->GetContent() + ")";
   } else if (variable != nullptr) {
     return variable->is_local ? LocalVariableName(variable->name) : GlobalVariableName(variable->name);
   }
@@ -307,7 +308,7 @@ std::string FunctionCallEvaluator::GetCode() const {
   std::string code;
   const std::string* fn_name = std::get_if<std::string>(&fn_name_or_builtin_);
   if (fn_name != nullptr) {
-    code += *fn_name + "(";
+    code += *fn_name + kFnSuffix + "(";
   } else {
     const BuiltinResolver* builtin = std::get_if<BuiltinResolver>(&fn_name_or_builtin_);
     assert(builtin != nullptr);
@@ -319,7 +320,7 @@ std::string FunctionCallEvaluator::GetCode() const {
       code += ", ";
     }
   }
-  code += ");";
+  code += ")";
   return code;
 }
 
@@ -539,6 +540,10 @@ std::string CodeBlockEvaluator::GetCode() const {
   std::string code;
   for (const auto& evaluator : evaluators_) {
     code += evaluator->GetCode();
+    if (dynamic_cast<FunctionCallEvaluator*>(evaluator.get()) != nullptr) {
+      code += ";";
+    }
+    code += "\n";
   }
   return code;
 }

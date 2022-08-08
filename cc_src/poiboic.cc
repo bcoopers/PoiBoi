@@ -65,14 +65,19 @@ bool Generate(const std::vector<Module>& modules, std::string& code) {
 
 int main(int argc, char** argv) {
   std::vector<pbc::Module> roots;
-  roots.reserve(argc - 1);
-  for (int i = 1; i < argc; ++i) {
+  roots.reserve(argc - 2);
+  const std::string outfname = argv[argc - 1];
+  if (outfname.ends_with(".poiboi")) {
+    std::cerr << "Final file name should be an output file name, not a .poiboi file." << std::endl;
+    return 1;
+  }
+  for (int i = 1; i < argc - 1; ++i) {
     const char* fname = argv[i];
     std::fstream filehandle;
     filehandle.open(fname, std::ios_base::in);
     if (!filehandle.is_open()) {
       std::cerr << "Compilation failed.\nCannot open file " << std::endl;
-      return 1;
+      return 2;
     }
     const std::string code{std::istreambuf_iterator<char>(filehandle),
                            std::istreambuf_iterator<char>()};
@@ -80,7 +85,7 @@ int main(int argc, char** argv) {
     std::vector<std::unique_ptr<pbc::TokenPiece>> tokens;
     if (!pbc::Scan(code, tokens)) {
       std::cerr << "Compilation failed while scanning " << fname << std::endl;
-      return 2;
+      return 3;
     }
     for (auto& token : tokens) {
       token->set_file_name(fname);
@@ -88,14 +93,17 @@ int main(int argc, char** argv) {
     roots.emplace_back();
     if (!pbc::Parse(tokens, roots.back())) {
       std::cerr << "Compilation failed while parsing " << fname << std::endl;
-      return 3;
+      return 4;
     }
   }
   std::string code;
   if (!pbc::Generate(roots, code)) {
     std::cerr << "Compilation failed in code generation." << std::endl;
-    return 4;
+    return 5;
   }
+  std::ofstream out(outfname);
+  out << code;
+  out.close();
   std::cout << "Compilation successful!" << std::endl;
   return 0;
 }
