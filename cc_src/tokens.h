@@ -179,17 +179,6 @@ class Assigner : public MatchTokenPiece<Assigner> {
   }
 };
 
-// Specifies a variable is a local variable.
-// TODO: This will be deprecated.
-class KeywordLocal : public MatchTokenPiece<KeywordLocal> {
- public:
-  size_t GetLength() const override { return 5; }
-  const char* GetContent() const override { return "LOCAL"; }
-  GrammarLabel GetLabel() const override {
-    return GrammarLabel::KEYWORD_LOCAL;
-  }
-};
-
 // Specifies a variable is a global variable.
 class KeywordGlobal : public MatchTokenPiece<KeywordGlobal> {
  public:

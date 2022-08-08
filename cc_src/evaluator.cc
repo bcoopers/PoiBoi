@@ -39,7 +39,6 @@ std::string GlobalVariableName(const std::string& name) {
   return name + kGlobalVarSuffix;
 }
 
-// Fill out.
 class RValueEvaluator {
  public:
   static ErrorOr<RValueEvaluator> TryCreate(const RValue& rv, CompilationContext& context);
@@ -50,7 +49,6 @@ class RValueEvaluator {
   std::variant<QuotedString, VariableAccessor, std::unique_ptr<FunctionCallEvaluator>> op_;
 };
 
-// Fill out.
 class VariableAssignmentEvaluator : public StatementEvaluator {
  public:
   static ErrorOr<VariableAssignmentEvaluator> TryCreate(const VariableAssignment& va, CompilationContext& context);
@@ -67,39 +65,19 @@ class VariableAssignmentEvaluator : public StatementEvaluator {
 ErrorOr<VariableAssignmentEvaluator> VariableAssignmentEvaluator::TryCreate(
     const VariableAssignment& va, CompilationContext& context) {
   const auto& children = va.GetChildren();
-  bool explicit_global = false;
-  if (children.size() == 4) {
-    if (children[0]->GetLabel() == GrammarLabel::KEYWORD_LOCAL) {
-      // TODO: Deprecate.
-    } else {
-      assert(children[0]->GetLabel() == GrammarLabel::KEYWORD_GLOBAL);
-      explicit_global = true;
-    }
-  } else {
-    assert(children.size() == 3);
-  }
+  assert(children.size() == 3);
   assert(children.back()->GetLabel() == GrammarLabel::RVALUE);
   const RValue& rval = dynamic_cast<const RValue&>(*children.back());
-  assert((*(children.rbegin() + 2))->GetLabel() == GrammarLabel::VARIABLE);
-  const Variable& var = dynamic_cast<const Variable&>(**(children.rbegin() + 2));
+  assert(children.front()->GetLabel() == GrammarLabel::VARIABLE);
+  const Variable& var = dynamic_cast<const Variable&>(*children.front());
   const std::string& var_name = var.GetContent();
   const bool is_predefined_local = context.curr_local_variables.count(var_name) == 1;
-  if (is_predefined_local && explicit_global) {
-    return ErrorCode::Failure("File: " + var.file_name() + "; line: " +
-                              std::to_string(var.line_number()) +
-                              "; Trying to redefine local variable " +
-                              var_name + " as global.");
-  }
   const bool is_predefined_global = context.curr_global_variables.count(var_name) == 1;
   auto rvalue_eval = RValueEvaluator::TryCreate(rval, context);
   RETURN_EC_IF_FAILURE(rvalue_eval);
 
-  if (explicit_global || is_predefined_global) {
+  if (is_predefined_global) {
     assert(!is_predefined_local);
-    if (!is_predefined_global) {
-      context.curr_global_variables.insert(var_name);
-      context.all_global_variables->insert(var_name);
-    }
     return VariableAssignmentEvaluator(/*local=*/false, /*already_defined=*/true, var_name, std::move(rvalue_eval.GetItem()));
   } else if (is_predefined_local) {
     return VariableAssignmentEvaluator(/*local=*/true, /*already_defined=*/true, var_name, std::move(rvalue_eval.GetItem()));
@@ -120,6 +98,35 @@ std::string VariableAssignmentEvaluator::GetCode() const {
   }
   code += " = " + e_.GetCode() + ";\n";
   return code;
+}
+
+class GlobalDeclarationEvaluator : public StatementEvaluator {
+ public:
+  static ErrorOr<GlobalDeclarationEvaluator> TryCreate(const GlobalDeclaration& va, CompilationContext& context);
+  // No code generated for this; only affects the CompilationContext.
+  std::string GetCode() const override { return ""; }
+ private:
+  GlobalDeclarationEvaluator(std::string name) : name_(std::move(name)) {}
+  std::string name_;
+};
+
+ErrorOr<GlobalDeclarationEvaluator> GlobalDeclarationEvaluator::TryCreate(const GlobalDeclaration& gd, CompilationContext& context) {
+  const auto& children = gd.GetChildren();
+  assert(children.size() == 2);
+  const auto& child1 = *children[1];
+  assert(child1.GetLabel() == GrammarLabel::VARIABLE);
+  const Variable& var = dynamic_cast<const Variable&>(child1);
+  const std::string& var_name = var.GetContent();
+  if (context.curr_local_variables.count(var_name) == 1) {
+    return ErrorCode::Failure("File: " + var.file_name() + "; line: " +
+                              std::to_string(var.line_number()) +
+                              "; Cannot declare predefined local variable : " +
+                              var_name + " as global.");
+
+  }
+  context.curr_global_variables.insert(var_name);
+  context.all_global_variables->insert(var_name);
+  return GlobalDeclarationEvaluator(var_name);
 }
 
 enum class BuiltinType {
@@ -483,6 +490,11 @@ ErrorOr<std::unique_ptr<StatementEvaluator>> StatementEvaluator::TryCreate(
         dynamic_cast<const VariableAssignment&>(*children[0]), context);
     RETURN_EC_IF_FAILURE(eval);
     return ReturnVal(std::make_unique<VariableAssignmentEvaluator>(std::move(eval.GetItem())));
+  } else if (label == GrammarLabel::GLOBAL_DECLARATION) {
+    auto eval = GlobalDeclarationEvaluator::TryCreate(
+      dynamic_cast<const GlobalDeclaration&>(*children[0]), context);
+    RETURN_EC_IF_FAILURE(eval);
+    return ReturnVal(std::make_unique<GlobalDeclarationEvaluator>(std::move(eval.GetItem())));
   } else if (label == GrammarLabel::FUNCTION_CALL) {
     auto eval = FunctionCallEvaluator::TryCreate(
         dynamic_cast<const FunctionCall&>(*children[0]), context);

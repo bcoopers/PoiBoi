@@ -102,6 +102,10 @@ GrammarPiece::Descendents Statement::GetDescendents() const {
   d.back().emplace_back(new EndStatement);
 
   d.emplace_back();
+  d.back().emplace_back(new GlobalDeclaration);
+  d.back().emplace_back(new EndStatement);
+
+  d.emplace_back();
   d.back().emplace_back(new FunctionCall);
   d.back().emplace_back(new EndStatement);
 
@@ -132,21 +136,19 @@ GrammarPiece::Descendents VariableAssignment::GetDescendents() const {
   Descendents d;
 
   d.emplace_back();
-  d.back().emplace_back(new KeywordLocal);
   d.back().emplace_back(new Variable);
   d.back().emplace_back(new Assigner);
   d.back().emplace_back(new RValue);
+
+  return d;
+}
+
+GrammarPiece::Descendents GlobalDeclaration::GetDescendents() const {
+  Descendents d;
 
   d.emplace_back();
   d.back().emplace_back(new KeywordGlobal);
   d.back().emplace_back(new Variable);
-  d.back().emplace_back(new Assigner);
-  d.back().emplace_back(new RValue);
-
-  d.emplace_back();
-  d.back().emplace_back(new Variable);
-  d.back().emplace_back(new Assigner);
-  d.back().emplace_back(new RValue);
 
   return d;
 }

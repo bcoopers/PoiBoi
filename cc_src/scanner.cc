@@ -188,7 +188,6 @@ std::vector<std::unique_ptr<TokenPiece>> CreateAllTokens() {
   tokens.emplace_back(new OpenConditionalBlock());
   tokens.emplace_back(new CloseConditionalBlock());
   tokens.emplace_back(new Assigner());
-  tokens.emplace_back(new KeywordLocal());
   tokens.emplace_back(new KeywordGlobal());
   tokens.emplace_back(new KeywordWhile());
   tokens.emplace_back(new KeywordIf());

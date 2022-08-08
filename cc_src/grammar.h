@@ -138,6 +138,18 @@ class VariableAssignment : public ExpandableGrammarPiece<VariableAssignment> {
   }
 };
 
+// Declares a variable as global for the scope.
+class GlobalDeclaration : public ExpandableGrammarPiece<GlobalDeclaration> {
+ public:
+  Descendents GetDescendents() const override;
+  GrammarLabel GetLabel() const override {
+    return GrammarLabel::GLOBAL_DECLARATION;
+  }
+  const char* DebugDescription() const override {
+    return "A global declaration, eg: GLOBAL foo";
+  }
+};
+
 // Calls a function.
 class FunctionCall : public ExpandableGrammarPiece<FunctionCall> {
  public:
