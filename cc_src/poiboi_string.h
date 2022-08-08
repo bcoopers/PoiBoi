@@ -23,8 +23,7 @@ limitations under the License.
 #include <cstring>
 
 #include <limits>
-// TODO: is this what we need for std::move?
-#include <memory>
+#include <utility>
 
 // This represents all the possible string types (defined below).
 enum TypeOfString {
