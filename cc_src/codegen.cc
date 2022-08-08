@@ -53,10 +53,14 @@ std::string GetFunctionDeclaration(const Function& fn) {
 ErrorCode GetFunctionDefinition(const Function& fn, CompilationContext& context,
                                 std::string& code) {
   code = GetFunctionDeclaration(fn) + "{\n";
+  for (const std::string& input_var : fn.GetVariablesList()) {
+    context.curr_local_variables.insert(input_var);
+  }
 
   const auto evaluator = CodeBlockEvaluator::TryCreate(fn.GetCode(), context);
   RETURN_EC_IF_FAILURE(evaluator);
   code += evaluator.GetItem().GetCode() + "\nreturn PBString();\n}\n\n\n";
+  context.curr_local_variables = {};
   return ErrorCode::Success();
 }
 }  // namespace

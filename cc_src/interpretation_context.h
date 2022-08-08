@@ -28,7 +28,7 @@ namespace pbc {
 struct CompilationContext {
   const std::unordered_map<std::string, const Function*>* fns{};
   std::unordered_set<std::string>* all_global_variables{};
-  std::unordered_set<std::string> curr_global_varaibles;
+  std::unordered_set<std::string> curr_global_variables;
   std::unordered_set<std::string> curr_local_variables;
   bool is_in_loop = false;
 };

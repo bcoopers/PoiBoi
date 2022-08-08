@@ -25,23 +25,29 @@ namespace pbc {
 
 class FunctionCallEvaluator;
 
+struct VariableAccessor {
+  bool is_local{};
+  std::string name;
+};
+
+std::string LocalVariableName(const std::string& name) {
+  return "LOCAL_VAR_" + name;
+}
+
+std::string GlobalVariableName(const std::string& name) {
+  return "GLOBAL_VAR_" + name;
+}
+
 // Fill out.
 class RValueEvaluator {
  public:
   static ErrorOr<RValueEvaluator> TryCreate(const RValue& rv, CompilationContext& context);
   std::string GetCode() const;
  private:
-  std::variant<QuotedString, Variable, std::unique_ptr<FunctionCallEvaluator>> op_;
+  RValueEvaluator(std::variant<QuotedString, VariableAccessor, std::unique_ptr<FunctionCallEvaluator>> op)
+      : op_(std::move(op)) {}
+  std::variant<QuotedString, VariableAccessor, std::unique_ptr<FunctionCallEvaluator>> op_;
 };
-
-ErrorOr<RValueEvaluator> RValueEvaluator::TryCreate(
-    const RValue& va, CompilationContext& context) {
-  return ErrorCode::Failure("RValueEvaluator unimplemented.");
-}
-
-std::string RValueEvaluator::GetCode() const {
-  return "Unimplemented";
-}
 
 // Fill out.
 class VariableAssignmentEvaluator : public StatementEvaluator {
@@ -60,6 +66,7 @@ class VariableAssignmentEvaluator : public StatementEvaluator {
 
 ErrorOr<VariableAssignmentEvaluator> VariableAssignmentEvaluator::TryCreate(
     const VariableAssignment& va, CompilationContext& context) {
+  const auto& children = va.GetChildren();
   return ErrorCode::Failure("VariableAssignmentEvaluator unimplemented.");
 }
 
@@ -68,7 +75,7 @@ std::string VariableAssignmentEvaluator::GetCode() const {
 }
 
 enum class BuiltinType {
-  EQUALS,
+  EQUAL,
   PRINT,
   CONCAT,
   NOT,
@@ -95,8 +102,8 @@ class BuiltinResolver {
 
 ErrorOr<BuiltinResolver> BuiltinResolver::TryCreate(
     const std::string& name, size_t line_num, const std::string& fname) {
-  if (name == "EQUALS") {
-    return BuiltinResolver(BuiltinType::EQUALS, "Builtin_Equals", 2);
+  if (name == "EQUAL") {
+    return BuiltinResolver(BuiltinType::EQUAL, "Builtin_Equal", 2);
   } else if (name == "PRINT") {
     return BuiltinResolver(BuiltinType::PRINT, "Builtin_Print", 1);
   } else if (name == "CONCAT") {
@@ -122,10 +129,54 @@ class FunctionCallEvaluator : public StatementEvaluator {
     std::string GetCode() const override;
    private:
     FunctionCallEvaluator(std::variant<std::string, BuiltinResolver> fnob, std::vector<RValueEvaluator> a) :
-      fn_name_or_builtin(std::move(fnob)), args(std::move(a)) {}
-    std::variant<std::string, BuiltinResolver> fn_name_or_builtin;
-    std::vector<RValueEvaluator> args;
+      fn_name_or_builtin_(std::move(fnob)), args_(std::move(a)) {}
+    std::variant<std::string, BuiltinResolver> fn_name_or_builtin_;
+    std::vector<RValueEvaluator> args_;
 };
+
+ErrorOr<RValueEvaluator> RValueEvaluator::TryCreate(
+    const RValue& rv, CompilationContext& context) {
+  const auto& children = rv.GetChildren();
+  assert(children.size() == 1);
+  const auto& child = *children[0];
+  std::variant<QuotedString, VariableAccessor, std::unique_ptr<FunctionCallEvaluator>> op;
+  if (child.GetLabel() == GrammarLabel::FUNCTION_CALL) {
+    const FunctionCall& fc = dynamic_cast<const FunctionCall&>(child);
+    auto fce = FunctionCallEvaluator::TryCreate(fc, context);
+    RETURN_EC_IF_FAILURE(fce);
+    op = std::make_unique<FunctionCallEvaluator>(std::move(fce.GetItem()));
+  } else if (child.GetLabel() == GrammarLabel::QUOTED_STRING) {
+    op = dynamic_cast<const QuotedString&>(child);
+  } else {
+    assert(child.GetLabel() == GrammarLabel::VARIABLE);
+    const Variable& var = dynamic_cast<const Variable&>(child);
+    const std::string& var_name = var.GetContent();
+    if (context.curr_local_variables.count(var_name) == 1) {
+      op = VariableAccessor{.is_local = true, .name = var_name};
+    } else if (context.curr_global_variables.count(var_name) == 1) {
+      op = VariableAccessor{.is_local = false, .name = var_name};
+    } else {
+      return ErrorCode::Failure("File: " + child.file_name() + "; line: " +
+                                std::to_string(child.line_number()) +
+                                "; Undefined variable: " + var_name);
+    }
+  }
+  return RValueEvaluator(std::move(op));
+}
+
+std::string RValueEvaluator::GetCode() const {
+  const QuotedString* quoted_string = std::get_if<QuotedString>(&op_);
+  const VariableAccessor* variable = std::get_if<VariableAccessor>(&op_);
+  const std::unique_ptr<FunctionCallEvaluator>* fn_call = std::get_if<std::unique_ptr<FunctionCallEvaluator>>(&op_);
+  if (quoted_string != nullptr) {
+    return quoted_string->GetContent();
+  } else if (variable != nullptr) {
+    return variable->is_local ? LocalVariableName(variable->name) : GlobalVariableName(variable->name);
+  }
+  assert(fn_call != nullptr);
+  return (**fn_call).GetCode();
+
+}
 
 namespace {
 
@@ -207,17 +258,17 @@ ErrorOr<FunctionCallEvaluator> FunctionCallEvaluator::TryCreate(
 
 std::string FunctionCallEvaluator::GetCode() const {
   std::string code;
-  const std::string* fn_name = std::get_if<std::string>(&fn_name_or_builtin);
+  const std::string* fn_name = std::get_if<std::string>(&fn_name_or_builtin_);
   if (fn_name != nullptr) {
     code += *fn_name + "(";
   } else {
-    const BuiltinResolver* builtin = std::get_if<BuiltinResolver>(&fn_name_or_builtin);
+    const BuiltinResolver* builtin = std::get_if<BuiltinResolver>(&fn_name_or_builtin_);
     assert(builtin != nullptr);
     code += builtin->GetCppName() + "(";
   }
-  for (int i = 0; i < args.size(); ++i) {
-    code += args.at(i).GetCode();
-    if (i + 1 != args.size()) {
+  for (int i = 0; i < args_.size(); ++i) {
+    code += args_.at(i).GetCode();
+    if (i + 1 != args_.size()) {
       code += ", ";
     }
   }
