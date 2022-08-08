@@ -55,23 +55,70 @@ class VariableAssignmentEvaluator : public StatementEvaluator {
   static ErrorOr<VariableAssignmentEvaluator> TryCreate(const VariableAssignment& va, CompilationContext& context);
   std::string GetCode() const override;
  private:
-  struct VarAssign {
-    bool is_local = true;
-    bool is_defined = true;
-    std::string name;
-    RValueEvaluator e;
-  };
-  std::vector<VarAssign> var_assigns_;
+  VariableAssignmentEvaluator(bool local, bool already_defined, std::string name, RValueEvaluator e)
+    : is_local_(local), already_defined_(already_defined), name_(std::move(name)), e_(std::move(e)) {}
+  bool is_local_{};
+  bool already_defined_{};
+  std::string name_;
+  RValueEvaluator e_;
 };
 
 ErrorOr<VariableAssignmentEvaluator> VariableAssignmentEvaluator::TryCreate(
     const VariableAssignment& va, CompilationContext& context) {
   const auto& children = va.GetChildren();
-  return ErrorCode::Failure("VariableAssignmentEvaluator unimplemented.");
+  bool explicit_global = false;
+  if (children.size() == 4) {
+    if (children[0]->GetLabel() == GrammarLabel::KEYWORD_LOCAL) {
+      // TODO: Deprecate.
+    } else {
+      assert(children[0]->GetLabel() == GrammarLabel::KEYWORD_GLOBAL);
+      explicit_global = true;
+    }
+  } else {
+    assert(children.size() == 3);
+  }
+  assert(children.back()->GetLabel() == GrammarLabel::RVALUE);
+  const RValue& rval = dynamic_cast<const RValue&>(*children.back());
+  assert((*(children.rbegin() - 2))->GetLabel() == GrammarLabel::VARIABLE);
+  const Variable& var = dynamic_cast<const Variable&>(**(children.rbegin() - 2));
+  const std::string& var_name = var.GetContent();
+  const bool is_predefined_local = context.curr_local_variables.count(var_name) == 1;
+  if (is_predefined_local && explicit_global) {
+    return ErrorCode::Failure("File: " + var.file_name() + "; line: " +
+                              std::to_string(var.line_number()) +
+                              "; Trying to redefine local variable " +
+                              var_name + " as global.");
+  }
+  const bool is_predefined_global = context.curr_global_variables.count(var_name) == 1;
+  auto rvalue_eval = RValueEvaluator::TryCreate(rval, context);
+  RETURN_EC_IF_FAILURE(rvalue_eval);
+
+  if (explicit_global || is_predefined_global) {
+    assert(!is_predefined_local);
+    if (!is_predefined_global) {
+      context.curr_global_variables.insert(var_name);
+      context.all_global_variables->insert(var_name);
+    }
+    return VariableAssignmentEvaluator(/*local=*/false, /*already_defined=*/true, var_name, std::move(rvalue_eval.GetItem()));
+  } else if (is_predefined_local) {
+    return VariableAssignmentEvaluator(/*local=*/true, /*already_defined=*/true, var_name, std::move(rvalue_eval.GetItem()));
+  }
+  context.curr_local_variables.insert(var_name);
+  return VariableAssignmentEvaluator(/*local=*/true, /*already_defined=*/false, var_name, std::move(rvalue_eval.GetItem()));
 }
 
 std::string VariableAssignmentEvaluator::GetCode() const {
-  return "Unimplemented";
+  std::string code;
+  if (is_local_ && !already_defined_) {
+    code += "PBString ";
+  }
+  if (is_local_) {
+    code += LocalVariableName(name_);
+  } else {
+    code += GlobalVariableName(name_);
+  }
+  code += " = " + e_.GetCode();
+  return code;
 }
 
 enum class BuiltinType {
