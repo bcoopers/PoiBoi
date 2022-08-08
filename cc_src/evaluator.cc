@@ -79,8 +79,8 @@ ErrorOr<VariableAssignmentEvaluator> VariableAssignmentEvaluator::TryCreate(
   }
   assert(children.back()->GetLabel() == GrammarLabel::RVALUE);
   const RValue& rval = dynamic_cast<const RValue&>(*children.back());
-  assert((*(children.rbegin() - 2))->GetLabel() == GrammarLabel::VARIABLE);
-  const Variable& var = dynamic_cast<const Variable&>(**(children.rbegin() - 2));
+  assert((*(children.rbegin() + 2))->GetLabel() == GrammarLabel::VARIABLE);
+  const Variable& var = dynamic_cast<const Variable&>(**(children.rbegin() + 2));
   const std::string& var_name = var.GetContent();
   const bool is_predefined_local = context.curr_local_variables.count(var_name) == 1;
   if (is_predefined_local && explicit_global) {
@@ -396,7 +396,7 @@ ErrorOr<IfEvaluator> IfEvaluator::TryCreate(const ConditionalEvaluation& ce, con
     assert(else_children->size() == 4);
     const auto& additional_conditional = dynamic_cast<const ConditionalEvaluation&>(
         *else_children->at(1));
-    assert(additional_conditional.GetChildren().size() == 2);
+    assert(additional_conditional.GetChildren().size() == 3);
     auto else_conditional = RValueEvaluator::TryCreate(
         dynamic_cast<const RValue&>(*additional_conditional.GetChildren()[1]), context);
     RETURN_EC_IF_FAILURE(else_conditional);

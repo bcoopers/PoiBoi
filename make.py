@@ -13,6 +13,6 @@ def compile_poiboi():
       hdrs.append(cc_dir + fname)
     elif fname.endswith('.cc'):
       srcs.append(cc_dir + fname)
-  subprocess.run(['g++', '-std=c++17', '-O2', '-Wall'] + srcs + ['-o', 'poiboi.exe'])
+  subprocess.run(['g++', '-std=c++20', '-O0', '-Wall'] + srcs + ['-o', 'poiboi.exe'])
 
 compile_poiboi()
