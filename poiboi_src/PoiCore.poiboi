@@ -20,7 +20,7 @@
 
 # Reverse a string. #
 PoiCoreReverse(str) {
-  LOCAL result = "";
+  result = "";
   WHILE [NOT(EQUAL(str, ""))] {
     result = CONCAT(SUBSTRING(str, "0", "1"), result);
     str = SUBSTRING(str, "1", "");
@@ -31,8 +31,8 @@ PoiCoreReverse(str) {
 # Returns the index of the first instance of substr in str. If this can't be #
 # found, returns STRLEN(str). #
 PoiCoreFind(str, substr) {
-  LOCAL resultIndex = "0";
-  LOCAL substrLen = STRLEN(substr);
+  resultIndex = "0";
+  substrLen = STRLEN(substr);
   WHILE [NOT(EQUAL(substr, SUBSTRING(str, "0", substrLen)))] {
     str = SUBSTRING(str, "1", "");
     IF [IntMathLessThan(STRLEN(str), STRLEN(substr))] {
@@ -52,8 +52,8 @@ PoiCoreFindBetween(str, substr, start, end) {
   IF [NOT(IntMathIsNonNegativeInt(end))] {
     end = STRLEN(str);
   }
-  LOCAL cutStr = SUBSTRING(str, start, end);
-  LOCAL cutStrResult = PoiCoreFind(cutStr, substr);
+  cutStr = SUBSTRING(str, start, end);
+  cutStrResult = PoiCoreFind(cutStr, substr);
   IF [EQUAL(cutStrResult, STRLEN(cutStr))] {
     RETURN STRLEN(str);
   }

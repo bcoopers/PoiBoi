@@ -2301,8 +2301,8 @@ DivisionTest() {
 }
 
 Main() {
-  LOCAL failureMessage = "Test failed!";
-  LOCAL val = ComparatorTest();
+  failureMessage = "Test failed!";
+  val = ComparatorTest();
   IF [NOT(val)] {
     PRINT(val);
     RETURN "";
